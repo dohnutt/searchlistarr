@@ -33,6 +33,8 @@ app.get('/', (req, res) => {
 		unknownsData = JSON.parse(fs.readFileSync(unknownsFile, 'utf8'));
 	} catch (e) {
 		console.error('Error reading unknowns file:', e);
+		console.log('⚠️ Creating ' + unknownsFile + ' from scratch. Re-run to try again.');
+		fs.writeFileSync(unknownsFile, JSON.stringify(unknownsData));
 	}
 	res.render('index', { unknowns: unknownsData.data });
 });
@@ -55,6 +57,8 @@ app.post('/update', async (req, res) => {
 		cached = JSON.parse(fs.readFileSync(watchlistFile, 'utf8'));
 	} catch (e) {
 		console.error('Error reading watchlist file:', e);
+		console.log('⚠️ Creating ' + watchlistFile + ' from scratch. Re-run to try again.');
+		fs.writeFileSync(watchlistFile, JSON.stringify(cached));
 	}
 	cached.data = cached.data.map(item => {
 		if (slugify(item.title) === slugify(title)) {
@@ -71,6 +75,8 @@ app.post('/update', async (req, res) => {
 		unknowns = JSON.parse(fs.readFileSync(unknownsFile, 'utf8'));
 	} catch (e) {
 		console.error('Error reading unknowns file:', e);
+		console.log('⚠️ Creating ' + unknownsFile + ' from scratch. Re-run to try again.');
+		fs.writeFileSync(unknownsFile, JSON.stringify(unknowns));
 	}
 	unknowns.data = unknowns.data.filter(item => slugify(item.title) !== slugify(title));
 	fs.writeFileSync(unknownsFile, JSON.stringify(unknowns, null, 2));
@@ -93,6 +99,8 @@ app.get('/run', async (req, res) => {
 		cached = JSON.parse(fs.readFileSync(watchlistFile, 'utf8'));
 	} catch (e) {
 		console.error('Error reading watchlist file:', e);
+		console.log('⚠️ Creating ' + watchlistFile + ' from scratch. Re-run to try again.');
+		fs.writeFileSync(watchlistFile, JSON.stringify(cached));
 	}
 
 	// 1. Scrape Google Watchlist.
