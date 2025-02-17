@@ -1,5 +1,5 @@
 # Use an official lightweight Node image.
-FROM node:18-alpine
+FROM --platform=linux/amd64 node:22-alpine
 
 # Create app directory
 WORKDIR /app
