@@ -28,25 +28,25 @@ async function scrapeWatchlist() {
 
 	for (let i = 0; i <= 5; i++) {
 		try {
-		const response = await axios.get(`${googleWatchlistUrl}?pageNumber=${i + 1}`, {
-			headers: {
-			'User-Agent': 'Mozilla/5.0'
+			const response = await axios.get(`${googleWatchlistUrl}?pageNumber=${i + 1}`, {
+				headers: {
+				'User-Agent': 'Mozilla/5.0'
+				}
+			});
+			document = new JSDOM(response.data).window.document;
+			const elements = document.querySelectorAll('[data-hveid] a[aria-label]');
+			let pageItems = [];
+			for (let el of elements) {
+				const label = el.getAttribute('aria-label');
+				if (label === prevFirstItem) break;
+				pageItems.push(label);
 			}
-		});
-		document = new JSDOM(response.data).window.document;
-		const elements = document.querySelectorAll('[data-hveid] a[aria-label]');
-		let pageItems = [];
-		for (let el of elements) {
-			const label = el.getAttribute('aria-label');
-			if (label === prevFirstItem) break;
-			pageItems.push(label);
-		}
-		if (pageItems.length && pageItems[0] !== prevFirstItem) {
-			prevFirstItem = pageItems[0];
-			items.push(...pageItems);
-		}
+			if (pageItems.length && pageItems[0] !== prevFirstItem) {
+				prevFirstItem = pageItems[0];
+				items.push(...pageItems);
+			}
 		} catch (error) {
-		console.error(error);
+			console.error(error);
 		}
 	}
 	console.log(`Scraped ${items.length} items.`);
