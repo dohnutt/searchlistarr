@@ -3,5 +3,5 @@
 node_modules
 npm-debug.log
 .env
-_cache/*
+cache/*
 *.bak

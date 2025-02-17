@@ -15,8 +15,8 @@ const { slugify } = require('./utils');
 const app = express();
 const PORT = process.env.PORT || 5155;
 
-const watchlistFile = './_cache/watchlist.json';
-const unknownsFile = './_cache/unknowns.json';
+const watchlistFile = './cache/watchlist.json';
+const unknownsFile = './cache/unknowns.json';
 
 // Set up EJS as the view engine
 app.set('view engine', 'ejs');

@@ -17,7 +17,7 @@ const tmdbOptions = {
 };
 
 const googleWatchlistUrl = process.env.GOOGLE_WATCHLIST_URL;
-const unknownsFile = './_cache/unknowns.json';
+const unknownsFile = './cache/unknowns.json';
 
 // Scrape Google Watchlist
 async function scrapeWatchlist() {
