@@ -11,8 +11,8 @@ RUN npm install
 # Copy the rest of your source code.
 COPY . .
 
-# Expose the port (match the port used in server.js, e.g., 3000)
-EXPOSE 7077
+# Expose the port (match the port used in server.js)
+EXPOSE 5155
 
 # Run the server.
 CMD ["node", "server.js"]

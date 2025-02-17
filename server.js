@@ -13,7 +13,7 @@ const { sendOverseerrRequest } = require('./overseerr');
 const { slugify } = require('./utils');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5155;
 
 const watchlistFile = './_cache/watchlist.json';
 const unknownsFile = './_cache/unknowns.json';

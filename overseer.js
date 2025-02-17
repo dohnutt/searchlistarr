@@ -14,7 +14,7 @@ async function sendOverseerrRequest(movie) {
 	
 	try {
 		const response = await axios.post(
-			process.env.OVERSEERR_API_URL,
+			process.env.OVERSEERR_URL + '/api/v1/request',
 			payload,
 			{
 				headers: {
