@@ -1,0 +1,8 @@
+body {
+	background-color: slategray;
+	color: white;
+	font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+	width: 700px;
+	max-width: 100%;
+	margin: 4em auto;
+}

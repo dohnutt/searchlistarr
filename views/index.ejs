@@ -1,0 +1,49 @@
+<!--
+/**
+ * A simple EJS template to list unknown items and allow you to update them.
+ */
+-->
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Searchlistarr • Manage Google Watchlist</title>
+	<link rel="stylesheet" href="style.css">
+	<style>
+		body { font-family: sans-serif; margin: 2rem; }
+		form { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; }
+		label { display: block; margin: 0.5rem 0; }
+	</style>
+</head>
+<body>
+	<h1>Unknown Movies/TV Shows</h1>
+	<% if (unknowns.length === 0) { %>
+		<p>No unknown items found!</p>
+	<% } else { %>
+		<% unknowns.forEach(function(item) { %>
+			<form action="/update" method="post">
+			<input type="hidden" name="id" value="<%= item.id %>">
+			<div>
+				<label>Title:
+				<input type="text" name="title" value="<%= item.title %>">
+				</label>
+			</div>
+			<div>
+				<label>Release Year:
+				<input type="text" name="releaseYear" value="<%= item.releaseYear %>">
+				</label>
+			</div>
+			<div>
+				<label>TMDB ID (optional):
+				<input type="text" name="tmdbId" value="">
+				</label>
+			</div>
+			<button type="submit">Re-query & Request</button>
+			</form>
+		<% }); %>
+	<% } %>
+	<hr>
+	<a href="/run">Run Full Process</a>
+</body>
+</html>
