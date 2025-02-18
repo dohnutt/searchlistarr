@@ -17,6 +17,7 @@ const tmdbOptions = {
 };
 
 const googleWatchlistUrl = process.env.GOOGLE_WATCHLIST_URL;
+const overrideCache = process.env.OVERRIDE_CACHE;
 const unknownsFile = './cache/unknowns.json';
 
 // Scrape Google Watchlist
@@ -44,6 +45,7 @@ async function scrapeWatchlist() {
 			if (pageItems.length && pageItems[0] !== prevFirstItem) {
 				prevFirstItem = pageItems[0];
 				items.push(...pageItems);
+				console.log('Page ' + (i + 1) + ': ' + prevFirstItem);
 			}
 		} catch (error) {
 			console.error(error);
@@ -70,19 +72,22 @@ async function fetchMovieData(movie, resultIndex = 0) {
 		const results = response.data.results;
 		if (!results || results.length === 0) return fallback;
 		let result = results[resultIndex];
+		
 		if (result) {
-		const title = result.title || result.name;
-		const releaseDate = result.release_date || result.first_air_date;
-		const year = releaseDate ? new Date(releaseDate).getFullYear() : null;
-		return {
-			id: result.id,
-			title,
-			releaseDate,
-			releaseYear: year,
-			mediaType: result.media_type,
-			dateAdded: Date.now(),
-			googleSearchUrl: 'https://google.ca/search?q=' + encodeURIComponent(title + ' (' + year + ')')
-		};
+			const title = result.title || result.name;
+			const releaseDate = result.release_date || result.first_air_date;
+			const year = releaseDate ? new Date(releaseDate).getFullYear() : null;
+			const titleYear = title + ' (' + (year || result.media_type) + ')';
+			
+			return {
+				id: result.id,
+				title,
+				releaseDate,
+				releaseYear: year,
+				mediaType: result.media_type,
+				dateAdded: Date.now(),
+				googleSearchUrl: 'https://google.ca/search?q=' + encodeURIComponent(titleYear)
+			};
 		}
 	} catch (err) {
 		console.error(err);
@@ -103,14 +108,14 @@ async function collectMovieData(movies, cachedData = []) {
 	for (let i = 0; i < movies.length; i += 5) {
 		const batch = movies.slice(i, i + 5);
 		const batchPromises = batch.map(movieTitle => {
-		const key = slugify(movieTitle);
-		if (cachedMap[key]) {
-			console.log(`Skipping cached: ${movieTitle}`);
-			return Promise.resolve(cachedMap[key]);
-		} else {
-			console.log(`Querying: ${movieTitle}`);
-			return fetchMovieData(movieTitle);
-		}
+			const key = slugify(movieTitle);
+			if (cachedMap[key] && !overrideCache) {
+				console.log(`Skipping cached: ${movieTitle}`);
+				return Promise.resolve(cachedMap[key]);
+			} else {
+				console.log(`Querying: ${movieTitle}`);
+				return fetchMovieData(movieTitle);
+			}
 		});
 		const batchResults = await Promise.all(batchPromises);
 		movieData.push(...batchResults.filter(result => result));

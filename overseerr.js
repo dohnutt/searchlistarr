@@ -5,10 +5,11 @@
 const axios = require('axios');
 
 async function sendOverseerrRequest(movie) {
+	console.log(movie);
 	// Build the payload as expected by Overseerr.
 	const payload = {
 		mediaId: movie.id,
-		mediaType: movie.mediaType, // e.g., "movie" or "tv"
+		mediaType: movie.mediaType,
 		// You can add more fields as needed by Overseerr API.
 	};
 	
@@ -24,11 +25,11 @@ async function sendOverseerrRequest(movie) {
 			}
 		);
 
-		console.log("Overseerr response:", response.data);
+		console.log('Overseerr response:', response.data);
 		
 		return response.data;
 	} catch (error) {
-		console.error("Error sending Overseerr request:", error.response ? error.response.data : error.message);
+		console.error('Error sending Overseerr request:', error.response ? error.response.data : error.message);
 		throw error;
 	}
 }

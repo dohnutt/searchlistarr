@@ -29,6 +29,8 @@ app.use(express.static('public'));
 // Main endpoint: display unknown items
 app.get('/', (req, res) => {
 	let unknownsData = { data: [] };
+	let watchlistData = { data: [] };
+
 	try {
 		unknownsData = JSON.parse(fs.readFileSync(unknownsFile, 'utf8'));
 	} catch (e) {
@@ -36,19 +38,32 @@ app.get('/', (req, res) => {
 		console.log('⚠️ Creating ' + unknownsFile + ' from scratch. Re-run to try again.');
 		fs.writeFileSync(unknownsFile, JSON.stringify(unknownsData));
 	}
-	res.render('index', { unknowns: unknownsData.data });
+
+	try {
+		watchlistData = JSON.parse(fs.readFileSync(watchlistFile, 'utf8'));
+	} catch (e) {
+		console.error('Error reading watchlist file:', e);
+		console.log('⚠️ Creating ' + watchlistFile + ' from scratch. Re-run to try again.');
+		fs.writeFileSync(watchlistFile, JSON.stringify(watchlistData));
+	}
+
+	res.render('index', { unknowns: unknownsData.data, watchlist: watchlistData.data.length });
 });
 
 // Form submission endpoint to update unknown and re-query TMDB, then send Overseerr request.
-app.post('/update', async (req, res) => {
-	const { id, title, releaseYear, tmdbId } = req.body;
-	console.log(`Update received for: ${title} (${releaseYear}) with TMDB ID: ${tmdbId}`);
+app.post('/query', async (req, res) => {
+	console.log(req);
+	const { id, title, releaseYear } = req.body;
+	console.log(`Update received for: ${title} (${releaseYear}) with TMDB ID: ${id}`);
+
+	// temporarily returning early.
+	return true;
 
 	// Re-query TMDB with updated info.
 	const updated = await collectMovieData([title], []); // second argument is empty cache here
 	const updatedMovie = updated && updated.length ? updated[0] : null;
 	if (!updatedMovie) {
-		return res.send("Failed to update record from TMDB.");
+		return res.send('Failed to update record from TMDB.');
 	}
 
 	// Update local watchlist cache
@@ -81,19 +96,31 @@ app.post('/update', async (req, res) => {
 	unknowns.data = unknowns.data.filter(item => slugify(item.title) !== slugify(title));
 	fs.writeFileSync(unknownsFile, JSON.stringify(unknowns, null, 2));
 
+	return res.status(200);
+});
+
+// Form submission endpoint to update unknown and re-query TMDB
+app.post('/request', async (req, res) => {
+	console.log(req);
+	const { id, mediaType } = req.body;
+	const movie = { id: id, mediaType: mediaType };
+
+	return;
+
 	// Make a media request to Overseerr
 	try {
-		await sendOverseerrRequest(updatedMovie);
+		await sendOverseerrRequest(movie);
 		console.log("Overseerr request sent.");
 	} catch (error) {
 		console.error("Error sending Overseerr request:", error);
 	}
 
-	res.redirect('/');
+	//res.redirect('/');
+	return res.send('Request complete.');
 });
 
 // A manual endpoint to run the entire process (scrape, update cache, unknowns, etc.)
-app.get('/run', async (req, res) => {
+app.post('/run', async (req, res) => {
 	let cached = { data: [] };
 	try {
 		cached = JSON.parse(fs.readFileSync(watchlistFile, 'utf8'));

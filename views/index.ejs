@@ -10,40 +10,61 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1"/>
 	<title>Searchlistarr • Manage Google Watchlist</title>
 	<link rel="stylesheet" href="style.css">
-	<style>
-		body { font-family: sans-serif; margin: 2rem; }
-		form { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; }
-		label { display: block; margin: 0.5rem 0; }
-	</style>
+	<meta name="robots" content="noindex, nofollow">
 </head>
 <body>
-	<h1>Unknown Movies/TV Shows</h1>
-	<% if (unknowns.length === 0) { %>
-		<p>No unknown items found!</p>
-	<% } else { %>
-		<% unknowns.forEach(function(item) { %>
-			<form action="/update" method="post">
-			<input type="hidden" name="id" value="<%= item.id %>">
-			<div>
-				<label>Title:
-				<input type="text" name="title" value="<%= item.title %>">
-				</label>
-			</div>
-			<div>
-				<label>Release Year:
-				<input type="text" name="releaseYear" value="<%= item.releaseYear %>">
-				</label>
-			</div>
-			<div>
-				<label>TMDB ID (optional):
-				<input type="text" name="tmdbId" value="">
-				</label>
-			</div>
-			<button type="submit">Re-query & Request</button>
-			</form>
-		<% }); %>
-	<% } %>
-	<hr>
-	<a href="/run">Run Full Process</a>
+
+	<header>
+		<img src="searchlistarr.svg" alt="Searchlistarr" width="240" height="32">
+
+		<nav>
+			<a href="/">Home</a>
+			<form id="full-run" action="/run" method="post"><button type="submit" class="button-link">Re-scrape watchlist<span class="icon loader dn" aria-label="Loading"> &nbsp; <svg class="spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path opacity=".4" d="M0 256C0 397.4 114.6 512 256 512c94.7 0 177.5-51.5 221.7-128l-55.4-32c-33.2 57.4-95.2 96-166.3 96C150 448 64 362 64 256S150 64 256 64l0-64C114.6 0 0 114.6 0 256z"/><path d="M477.7 384c21.8-37.7 34.3-81.4 34.3-128C512 114.6 397.4 0 256 0l0 64c106 0 192 86 192 192c0 35-9.4 67.8-25.7 96l55.4 32z"/></svg></span></button></form>
+			<hr />
+			<a href="https://tv.dohnutt.com">Overseer</a>
+		</nav>
+	</header>
+
+	<main>
+
+		<h1 style="margin-top: 0;">Unknown media</h1>
+		<p><%= unknowns.length %> unknown media, <%= watchlist %> total</p>
+
+		<% if (unknowns.length === 0) { %>
+			<p>No unknown media found 😎👍</p>
+		<% } else { %>
+			<% unknowns.forEach(function(movie, i) { %>
+				<form action="/query" id="movie-<%= i %>" method="post" class="movie">
+					<fieldset>
+						<label for="title">Title:</label>
+						<textarea type="text" name="title" placeholder="A Space Odyssey"><%= movie.title %></textarea>
+					</fieldset>
+					<fieldset>
+						<label for="releaseYear">Release year</label>
+						<input type="text" name="releaseYear" value="<%= movie.releaseYear %>" placeholder="2001" width="100">
+					</fieldset>
+					<fieldset>
+						<legend>Type</legend>
+						
+						<div class="radios">
+							<label for="mediaType_movie_<%= i %>"><input type="radio" name="mediaType" id="mediaType_movie_<%= i %>" value="movie" checked> Movie</label>
+							<label for="mediaType_tv_<%= i %>"><input type="radio" name="mediaType" id="mediaType_tv_<%= i %>" value="tv"> TV</label>
+						</div>
+					</fieldset>
+					<fieldset>
+						<label for="id">TMDB ID (optional)</label>
+						<input type="text" name="id" value="<%= movie.id > 0 ? movie.id : '' %>" width="100">
+					</fieldset>
+
+					<button type="submit"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M368 208A160 160 0 1 0 48 208a160 160 0 1 0 320 0zM337.1 371.1C301.7 399.2 256.8 416 208 416C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208c0 48.8-16.8 93.7-44.9 129.1l124 124 17 17L478.1 512l-17-17-124-124z"/></svg> </span> Query TMDB<span class="icon loader dn" aria-label="Loading"> &nbsp; <svg class="spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path opacity=".4" d="M0 256C0 397.4 114.6 512 256 512c94.7 0 177.5-51.5 221.7-128l-55.4-32c-33.2 57.4-95.2 96-166.3 96C150 448 64 362 64 256S150 64 256 64l0-64C114.6 0 0 114.6 0 256z"/><path d="M477.7 384c21.8-37.7 34.3-81.4 34.3-128C512 114.6 397.4 0 256 0l0 64c106 0 192 86 192 192c0 35-9.4 67.8-25.7 96l55.4 32z"/></svg></span></button>
+
+					<button type="button" class="js-request button-overseerr" id="request-<%= i %>" <%= movie.id.length ? '' : 'disabled' %>><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M241 345l-17 17-17-17L79 217l-17-17L96 166.1l17 17 87 87L200 24l0-24 48 0 0 24 0 246.1 87-87 17-17L385.9 200l-17 17L241 345zM48 344l0 120 352 0 0-120 0-24 48 0 0 24 0 144 0 24-24 0L24 512 0 512l0-24L0 344l0-24 48 0 0 24z"/></svg> </span> Request<span class="icon loader dn" aria-label="Loading"> &nbsp; <svg class="spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path opacity=".4" d="M0 256C0 397.4 114.6 512 256 512c94.7 0 177.5-51.5 221.7-128l-55.4-32c-33.2 57.4-95.2 96-166.3 96C150 448 64 362 64 256S150 64 256 64l0-64C114.6 0 0 114.6 0 256z"/><path d="M477.7 384c21.8-37.7 34.3-81.4 34.3-128C512 114.6 397.4 0 256 0l0 64c106 0 192 86 192 192c0 35-9.4 67.8-25.7 96l55.4 32z"/></svg></span></button>
+				</form>
+			<% }); %>
+		<% } %>
+
+	</main>
+
+	<script type="text/javascript" src="app.js"></script>
 </body>
 </html>
