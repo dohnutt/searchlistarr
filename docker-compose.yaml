@@ -1,0 +1,17 @@
+services:
+  express:
+    build:
+      context: ./
+    ports:
+      - '5155:5155'
+      - '9229:9229'
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DEBUG=express:*
+    command:
+      - nodemon
+      - --inspect=0.0.0.0:9229
+      - server.js
