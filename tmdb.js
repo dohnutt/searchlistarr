@@ -174,7 +174,15 @@ async function createUnknownsFile(data) {
 		}
 	});
 
-	const unknowns = [...people, ...unmatched, ...duplicates];
+	// For each duplicate, re-query using resultIndex = 1.
+	const reRunDuplicates = [];
+	for (const dup of duplicates) {
+		console.log(`Re-querying duplicate: ${dup.title}`);
+		const fixed = await fetchMovieData(dup.title, dup.googleTitle, 1);
+		reRunDuplicates.push(fixed && fixed.id !== dup.id ? fixed : dup);
+	}
+
+	const unknowns = [...people, ...unmatched, ...reRunDuplicates];
 	console.log(`Found ${unknowns.length} unknown items.`);
 	const unknownsData = { generated: Date.now(), data: unknowns };
 	fs.writeFileSync(unknownsFile, JSON.stringify(unknownsData, null, 2));
