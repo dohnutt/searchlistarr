@@ -103,7 +103,7 @@ app.post('/query', async (req, res) => {
 	console.log(`Querying ${movie.title} (${movie.releaseYear}) - TMDB ID: ${movie.id}`);
 
 	// Re-query TMDB with updated info.
-	const updatedMovie = await fetchMovieData(movie.title, movie.googleTitle) || null;
+	const updatedMovie = await fetchMovieData(movie.title, movie) || null;
 	if (!updatedMovie || updatedMovie.id === 0) {
 		console.log('No results for:', movie.title);
 		return res.json({success: false})
@@ -177,6 +177,7 @@ app.post('/request', async (req, res) => {
 // A manual endpoint to run the entire process (scrape, update cache, unknowns, etc.)
 app.post('/run', async (req, res) => {
 	let cached = { data: [] };
+	
 	try {
 		cached = JSON.parse(fs.readFileSync(watchlistFile, 'utf8'));
 	} catch (e) {

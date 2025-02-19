@@ -7,7 +7,6 @@ const axios = require('axios');
 const { JSDOM } = require('jsdom');
 const { slugify } = require('./utils');
 
-const tmdb = 'https://api.themoviedb.org/3/search/multi?include_adult=false&language=en-US&page=1';
 const tmdbOptions = {
 	method: 'GET',
 	headers: {
@@ -56,11 +55,11 @@ async function scrapeWatchlist() {
 }
 
 // Query TMDB for a movie. If resultIndex is not 0, returns the alternate result.
-async function fetchMovieData(movie, googleTitle, resultIndex = 0) {
+async function fetchMovieData(movie, movieData = {}, resultIndex = 0) {
 	const fallback = {
 		id: 0,
 		title: movie,
-		googleTitle: googleTitle,
+		googleTitle: movieData.googleTitle,
 		releaseDate: null,
 		releaseYear: null,
 		mediaType: null,
@@ -69,7 +68,10 @@ async function fetchMovieData(movie, googleTitle, resultIndex = 0) {
 	};
 
 	try {
-		const response = await axios.get(tmdb + '&query=' + encodeURIComponent(movie), tmdbOptions);
+		const response = await axios.get(
+			'https://api.themoviedb.org/3/search/' + (movieData.mediaType || 'multi') + '?include_adult=false&language=en-US&page=1&query=' + encodeURIComponent(movie) + (movieData.releaseYear ? '&year=' + movieData.releaseYear : ''),
+			tmdbOptions
+		);
 		const results = response.data.results;
 		if (!results || results.length === 0) return fallback;
 		let result = results[resultIndex];
@@ -83,12 +85,12 @@ async function fetchMovieData(movie, googleTitle, resultIndex = 0) {
 			return {
 				id: result.id,
 				title,
-				googleTitle,
+				googleTitle: movieData.googleTitle,
 				releaseDate,
 				releaseYear: year,
 				mediaType: result.media_type,
 				dateAdded: Date.now(),
-				googleSearchUrl: 'https://google.ca/search?q=' + encodeURIComponent(titleYear)
+				googleSearchUrl: 'https://google.ca/search?q=' + encodeURIComponent(title)
 			};
 		}
 	} catch (err) {
@@ -116,7 +118,7 @@ async function collectMovieData(movies, cachedData = []) {
 				return Promise.resolve(cachedMap[key]);
 			} else {
 				console.log(`Querying: ${movieTitle}`);
-				return fetchMovieData(movieTitle, movieTitle);
+				return fetchMovieData(movieTitle, {googleTitle: movieTitle});
 			}
 		});
 		const batchResults = await Promise.all(batchPromises);
@@ -146,16 +148,15 @@ async function createUnknownsFile(data) {
 	const unmatched = data.filter(item => item.id === 0);
 	const titleCount = {};
 	const duplicates = [];
+	const fallback = {
+		id: 0,
+		releaseDate: null,
+		releaseYear: null,
+		//mediaType: null,
+	};
 
 	data.forEach(item => {
 		const key = slugify(item.title);
-		const fallback = {
-			id: 0,
-			releaseDate: null,
-			releaseYear: null,
-			mediaType: null,
-		};
-
 		titleCount[key] = (titleCount[key] || 0) + 1;
 
 		if (item.id === 0) {
@@ -178,7 +179,7 @@ async function createUnknownsFile(data) {
 	const reRunDuplicates = [];
 	for (const dup of duplicates) {
 		console.log(`Re-querying duplicate: ${dup.title}`);
-		const fixed = await fetchMovieData(dup.title, dup.googleTitle, 1);
+		const fixed = await fetchMovieData(dup.title, {googleTitle: dup.googleTitle}, 1);
 		reRunDuplicates.push(fixed && fixed.id !== dup.id ? fixed : dup);
 	}
 
