@@ -56,10 +56,11 @@ async function scrapeWatchlist() {
 }
 
 // Query TMDB for a movie. If resultIndex is not 0, returns the alternate result.
-async function fetchMovieData(movie, resultIndex = 0) {
+async function fetchMovieData(movie, googleTitle, resultIndex = 0) {
 	const fallback = {
 		id: 0,
 		title: movie,
+		googleTitle: googleTitle,
 		releaseDate: null,
 		releaseYear: null,
 		mediaType: null,
@@ -82,6 +83,7 @@ async function fetchMovieData(movie, resultIndex = 0) {
 			return {
 				id: result.id,
 				title,
+				googleTitle,
 				releaseDate,
 				releaseYear: year,
 				mediaType: result.media_type,
@@ -100,7 +102,7 @@ async function collectMovieData(movies, cachedData = []) {
 	console.log(`Querying TMDB for ${movies.length} movies...`);
 
 	const cachedMap = cachedData.reduce((map, movie) => {
-		map[slugify(movie.title)] = movie;
+		map[slugify(movie.googleTitle)] = movie;
 		return map;
 	}, {});
 
@@ -114,12 +116,12 @@ async function collectMovieData(movies, cachedData = []) {
 				return Promise.resolve(cachedMap[key]);
 			} else {
 				console.log(`Querying: ${movieTitle}`);
-				return fetchMovieData(movieTitle);
+				return fetchMovieData(movieTitle, movieTitle);
 			}
 		});
 		const batchResults = await Promise.all(batchPromises);
 		movieData.push(...batchResults.filter(result => result));
-		await new Promise(resolve => setTimeout(resolve, 500));
+		await new Promise(resolve => setTimeout(resolve, 25));
 	}
 
 	return movieData;
@@ -144,21 +146,35 @@ async function createUnknownsFile(data) {
 	const unmatched = data.filter(item => item.id === 0);
 	const titleCount = {};
 	const duplicates = [];
+
 	data.forEach(item => {
 		const key = slugify(item.title);
+		const fallback = {
+			id: 0,
+			releaseDate: null,
+			releaseYear: null,
+			mediaType: null,
+		};
+
 		titleCount[key] = (titleCount[key] || 0) + 1;
-		if (titleCount[key] > 1) duplicates.push(item);
+
+		if (item.id === 0) {
+			item.unknownStatus = 'unmatched';
+		}
+
+		if (titleCount[key] > 1) {
+			item = { ...item, ...fallback };
+			item.unknownStatus = 'duplicate';
+			duplicates.push(item);
+		}
+
+		if (item.mediaType === 'person') {
+			item = { ...item, ...fallback };
+			item.unknownStatus = 'unmatched';
+		}
 	});
 
-	// For each duplicate, re-query using resultIndex = 1.
-	const reRunDuplicates = [];
-	for (const dup of duplicates) {
-		console.log(`Re-querying duplicate: ${dup.title}`);
-		const fixed = await fetchMovieData(dup.title, 1);
-		reRunDuplicates.push(fixed && fixed.id !== dup.id ? fixed : dup);
-	}
-
-	const unknowns = [...people, ...unmatched, ...reRunDuplicates];
+	const unknowns = [...people, ...unmatched, ...duplicates];
 	console.log(`Found ${unknowns.length} unknown items.`);
 	const unknownsData = { generated: Date.now(), data: unknowns };
 	fs.writeFileSync(unknownsFile, JSON.stringify(unknownsData, null, 2));

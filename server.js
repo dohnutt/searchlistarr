@@ -8,7 +8,7 @@ const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
 
-const { scrapeWatchlist, collectMovieData, combineWatchlists, createUnknownsFile } = require('./tmdb');
+const { scrapeWatchlist, collectMovieData, combineWatchlists, createUnknownsFile, fetchMovieData } = require('./tmdb');
 const { sendOverseerrRequest } = require('./overseerr');
 const { slugify } = require('./utils');
 
@@ -23,7 +23,8 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Parse form data
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 // Main endpoint: display unknown items
@@ -47,24 +48,68 @@ app.get('/', (req, res) => {
 		fs.writeFileSync(watchlistFile, JSON.stringify(watchlistData));
 	}
 
-	res.render('index', { unknowns: unknownsData.data, watchlist: watchlistData.data.length });
+	res.render('index', {
+		title: 'Your watchlist',
+		movies: watchlistData.data,
+		stats: {
+			watchlist: watchlistData.data.length,
+			unknowns: unknownsData.data.length
+		},
+		nav: {
+			currentPage: 'watchlist',
+			overseerUrl: process.env.OVERSEERR_URL
+		}
+	});
+});
+
+// Main endpoint: display unknown items
+app.get('/unknowns', (req, res) => {
+	let unknownsData = { data: [] };
+	let watchlistData = { data: [] };
+
+	try {
+		unknownsData = JSON.parse(fs.readFileSync(unknownsFile, 'utf8'));
+	} catch (e) {
+		console.error('Error reading unknowns file:', e);
+		console.log('⚠️ Creating ' + unknownsFile + ' from scratch. Re-run to try again.');
+		fs.writeFileSync(unknownsFile, JSON.stringify(unknownsData));
+	}
+
+	try {
+		watchlistData = JSON.parse(fs.readFileSync(watchlistFile, 'utf8'));
+	} catch (e) {
+		console.error('Error reading watchlist file:', e);
+		console.log('⚠️ Creating ' + watchlistFile + ' from scratch. Re-run to try again.');
+		fs.writeFileSync(watchlistFile, JSON.stringify(watchlistData));
+	}
+
+	res.render('index', {
+		title: 'Unknown media',
+		movies: unknownsData.data,
+		stats: {
+			watchlist: watchlistData.data.length,
+			unknowns: unknownsData.data.length
+		},
+		nav: {
+			currentPage: 'unknowns',
+			overseerUrl: process.env.OVERSEER_URL
+		}
+	});
 });
 
 // Form submission endpoint to update unknown and re-query TMDB, then send Overseerr request.
 app.post('/query', async (req, res) => {
-	console.log(req);
-	const { id, title, releaseYear } = req.body;
-	console.log(`Update received for: ${title} (${releaseYear}) with TMDB ID: ${id}`);
-
-	// temporarily returning early.
-	return true;
+	const movie = req.body;
+	console.log(`Querying ${movie.title} (${movie.releaseYear}) - TMDB ID: ${movie.id}`);
 
 	// Re-query TMDB with updated info.
-	const updated = await collectMovieData([title], []); // second argument is empty cache here
-	const updatedMovie = updated && updated.length ? updated[0] : null;
-	if (!updatedMovie) {
-		return res.send('Failed to update record from TMDB.');
+	const updatedMovie = await fetchMovieData(movie.title, movie.googleTitle) || null;
+	if (!updatedMovie || updatedMovie.id === 0) {
+		console.log('No results for:', movie.title);
+		return res.json({success: false})
 	}
+
+	console.log('Found metadata:', updatedMovie);
 
 	// Update local watchlist cache
 	let cached = { data: [] };
@@ -75,14 +120,15 @@ app.post('/query', async (req, res) => {
 		console.log('⚠️ Creating ' + watchlistFile + ' from scratch. Re-run to try again.');
 		fs.writeFileSync(watchlistFile, JSON.stringify(cached));
 	}
-	cached.data = cached.data.map(item => {
-		if (slugify(item.title) === slugify(title)) {
-			return { ...item, ...updatedMovie };
+	
+	cached.data = cached.data.map(cachedMovie => {
+		if (slugify(cachedMovie.googleTitle) == slugify(movie.googleTitle)) {
+			return { ...cachedMovie, ...updatedMovie };
 		}
-		return item;
+		return cachedMovie;
 	});
 	
-	fs.writeFileSync(watchlistFile, JSON.stringify(cached, null, 2));
+	fs.writeFileSync(watchlistFile, JSON.stringify(cached));
 
 	// Remove from unknowns cache
 	let unknowns = { data: [] };
@@ -93,10 +139,19 @@ app.post('/query', async (req, res) => {
 		console.log('⚠️ Creating ' + unknownsFile + ' from scratch. Re-run to try again.');
 		fs.writeFileSync(unknownsFile, JSON.stringify(unknowns));
 	}
-	unknowns.data = unknowns.data.filter(item => slugify(item.title) !== slugify(title));
+	// remove no longer unknown data
+	//unknowns.data = unknowns.data.filter(item => slugify(item.googleTitle) !== slugify(movie.googleTitle));
+
+	unknowns.data = unknowns.data.map(unknownMovie => {
+		if (slugify(unknownMovie.googleTitle) == slugify(movie.googleTitle)) {
+			return { ...unknownMovie, ...updatedMovie };
+		}
+		return unknownMovie;
+	});
+
 	fs.writeFileSync(unknownsFile, JSON.stringify(unknowns, null, 2));
 
-	return res.status(200);
+	return res.json({success: true, data: { cached: cached.data, unknowns: unknowns.data }});
 });
 
 // Form submission endpoint to update unknown and re-query TMDB
@@ -145,7 +200,7 @@ app.post('/run', async (req, res) => {
 	// 4. Create unknowns file (this re-queries duplicates and stores people/id=0)
 	await createUnknownsFile(combined);
 
-	res.send("Process complete. Check logs and WebUI for unknowns.");
+	return res.json({success: true, message: "Process complete. Check logs and WebUI for unknowns."});
 });
 
 app.listen(PORT, () => {

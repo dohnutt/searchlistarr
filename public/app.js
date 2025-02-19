@@ -9,15 +9,21 @@ function queryTmdb(e) {
 	e.preventDefault();
 	let form = e.target;
 	let button = e.submitter;
+	const data = new FormData(form);
 	startLoad(button);
 
 	fetch(form.action,
 		{
 			method: form.method,
-			body: JSON.stringify(new FormData(form)),
-			headers: {'Content-Type': 'application/json'}
+			body: JSON.stringify(Object.fromEntries(data.entries())),
+			headers: {
+				'Content-Type': 'application/json'
+			}
 		})
-		.then(res => res.body)
+		.then(response => response.json())
+		.then(result => {
+			console.log(result);
+		})
 		.finally(() => endLoad(button))
 		.catch(err => console.error(err))
 	
@@ -47,7 +53,6 @@ function fullRescrape(e) {
 	fetch(form.action, {method: form.method, body: new FormData(form)})
 		.finally(() => {
 			endLoad(button);
-			window.location.reload();
 		})
 		.catch(err => console.error(err));
 

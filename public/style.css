@@ -6,7 +6,7 @@
 :root {
 	font-size: 20px;
 	--background: #202124;
-	--blue: #4285f4;
+	--blue: #649fff; /*#4285f4;*/
 	--red: #ea4336;
 	--orange: #fbbd05;
 	--green: #34a853;
@@ -22,7 +22,7 @@ body {
 
 a, .button-link {
 	color: color-mix(in srgb, var(--blue) 75%, white);
-	transition: color 0.2s ease;
+	transition: color 0.2s ease, background 0.2s ease;
 	text-decoration: none;
 }
 
@@ -34,7 +34,9 @@ a:hover, a:focus, .button-link:hover, .button-link:focus {
 
 header {
 	padding: 2rem;
-	background: rgb(0 0 0 / 40%);
+	background: rgb(0 0 0 / 20%);
+	border: 0 solid rgb(255 255 255 / 15%);
+	border-width: 0 0 1px 0;
 }
 
 main {
@@ -46,8 +48,11 @@ nav {
 	margin-top: 2rem;
 }
 
-nav > * {
-	margin: 1em 0;
+nav .is-current {
+	text-decoration: underline;
+	text-underline-position: under;
+	text-decoration-color: white;
+	color: white;
 }
 
 hr {
@@ -68,19 +73,14 @@ button {
 	border-radius: 1.5em;
 	color: var(--background);
 	background: var(--blue);
+	border: 1px solid rgb(255 255 255 / 25%);
+	box-shadow: 0.05em 0.125em 0.5em 0 rgb(0 0 0 / 75%);
 	cursor: pointer;
-	transition: color 0.2s ease, background 0.2s ease;
+	transition: color 0.2s ease, background 0.2s ease, background-image 0.2s ease;
 }
 
 button:hover, button:focus {
 	background: color-mix(in srgb, var(--blue) 75%, white)
-}
-
-button:disabled {
-	opacity: 0.333;
-	cursor: not-allowed;
-	background: #2c2d30;
-	color: white;
 }
 
 .button-link {
@@ -102,6 +102,19 @@ button:disabled {
 	color: white;
 }
 
+.button-overseerr:hover, .button-overseerr:focus {
+	background-image: linear-gradient(to bottom right, #2d26ad, #6f1abe);
+}
+
+button:disabled, button:disabled:hover, button:disabled:focus {
+	opacity: 0.333;
+	cursor: not-allowed;
+	background: #2c2d30;
+	border-color: transparent;
+	box-shadow: none;
+	color: white;
+}
+
 input[type="text"], input[type="number"], textarea, select {
 	font-family: inherit;
 	font-size: inherit;
@@ -109,15 +122,17 @@ input[type="text"], input[type="number"], textarea, select {
 	width: 100%;
 	padding: 0.475rem 1rem 0.525rem;
 	line-height: 1.5;
-	background: #4d5156;
+	background: rgb(255 255 255 / 20%);
+	border: 1px solid rgb(255 255 255 / 25%);
 	color: white;
+	transition: color 0.2s ease, background 0.2s ease;
 	border-radius: 1.5em;
 	min-height: 2.5rem;
 }
 
 input[type="text"]:hover, input[type="number"]:hover, textarea:hover, select:hover,
 input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus {
-	background: color-mix(in srgb, #4d5156 95%, white);
+	background: rgb(255 255 255 / 15%);
 }
 
 input[type="text"][width] {
@@ -126,11 +141,15 @@ input[type="text"][width] {
 
 textarea {
 	field-sizing: content;
-	resize: block;
+	resize: none;
 }
 
 ::placeholder {
 	color: rgba(255 255 255 / 35%);
+}
+
+small {
+	font-size: 0.8rem;
 }
 
 label, legend {
@@ -145,7 +164,9 @@ label, legend {
 	margin: 0 0.25rem 0 0;
 	padding: 0.25em 0.875em 0.325em 0.625em;
 	background: #2c2d30;
+	border: 1px solid rgb(255 255 255 / 20%);
 	border-radius: 1.5em;
+	cursor: pointer;
 }
 
 .radios label:has(:checked) {
@@ -156,9 +177,21 @@ label, legend {
 
 .movie {
 	background: rgb(0 0 0 / 20%);
+	border: 1px solid rgb(255 255 255 / 10%);
 	border-radius: 1.5rem;
 	padding: 2em;
 	margin: 0 0 2em;
+	position: relative;
+}
+
+.is-unknown {
+	background: rgb(66 13 9 / 20%);
+}
+
+.unknown-status {
+	position: absolute;
+	top: 2rem;
+	right: 2rem;
 }
 
 .icon {
@@ -173,10 +206,6 @@ label, legend {
 	width: 1.125em;
 	height: 1.125em;
 	fill: currentColor;
-}
-
-.loader svg {
-	fill: white;
 }
 
 .spin {
@@ -200,6 +229,10 @@ label, legend {
 	display: none;
 }
 
+.opacity-muted {
+	opacity: 0.7;
+}
+
 @media screen and (min-width: 992px) {
 	body {
 		display: flex;
@@ -210,14 +243,31 @@ label, legend {
 		height: 100vh;
 		position: sticky;
 		top: 0;
+		border-width: 0 1px 0 0;
+	}
+
+	nav > * {
+		margin: 1.5em 0;
+	}
+
+	nav > a {
+		display: block;
+	}
+
+	nav > form {
+		margin-left: -0.75rem;
 	}
 }
 
 @media screen and (max-width: 991px) {
+	:root {
+		font-size: 1.125rem;
+	}
+
 	nav {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 15px;
+		gap: 1em;
 		align-items: baseline;
 	}
 
