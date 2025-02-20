@@ -15,10 +15,11 @@ RUN yarn
 # Copy the rest of your source code.
 COPY . .
 
-USER node
-
 # Expose the port (match the port used in server.js)
 EXPOSE 5155
+
+RUN chown -R node:node *.json
+USER node
 
 # Run the server.
 CMD ["node", "server.js"]
