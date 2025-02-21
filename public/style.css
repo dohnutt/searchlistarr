@@ -44,6 +44,7 @@ main {
 	padding: 2rem;
 }
 
+
 nav {
 	margin-top: 2rem;
 }
@@ -53,6 +54,31 @@ nav .is-current {
 	text-underline-position: under;
 	text-decoration-color: white;
 	color: white;
+}
+
+nav > * {
+	margin: 1.5em 0;
+}
+
+nav > a {
+	display: block;
+}
+
+nav > form {
+	margin-left: -0.75rem;
+}
+
+.burg {
+	background: transparent;
+	color: white;
+	border-radius: 0.5rem;
+	float: right;
+	margin-top: -0.25em;
+	padding-bottom: 0.475rem;
+}
+.burg .icon svg {
+	width: 1.5em;
+	height: 1.5em;
 }
 
 hr {
@@ -225,7 +251,7 @@ label, legend {
     }
 }
 
-.dn {
+body .dn, body [hidden] {
 	display: none;
 }
 
@@ -246,16 +272,8 @@ label, legend {
 		border-width: 0 1px 0 0;
 	}
 
-	nav > * {
-		margin: 1.5em 0;
-	}
-
-	nav > a {
-		display: block;
-	}
-
-	nav > form {
-		margin-left: -0.75rem;
+	.burg {
+		display: none;
 	}
 }
 
@@ -265,14 +283,11 @@ label, legend {
 	}
 
 	nav {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 1em;
-		align-items: baseline;
+		display: none;
+		text-align: center;
 	}
 
-	nav hr {
-		flex-grow: 1;
-		align-self: center;
+	nav.open {
+		display: block;
 	}
 }

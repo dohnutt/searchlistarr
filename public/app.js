@@ -1,9 +1,16 @@
+document.querySelector('.burg').addEventListener('click', toggleNav);
+document.getElementById('full-run').addEventListener('submit', fullRescrape);
+
 document.querySelectorAll('form.movie').forEach(form => {
 	form.addEventListener('submit', queryTmdb);
 	form.querySelector('.js-request').addEventListener('click', requestToOverseerr);
 });
 
-document.getElementById('full-run').addEventListener('submit', fullRescrape);
+function toggleNav(e) {
+	document.querySelector('nav').classList.toggle('open');
+	this.querySelector('.ham').classList.toggle('dn');
+	this.querySelector('.x').classList.toggle('dn');
+}
 
 function queryTmdb(e) {
 	e.preventDefault();
@@ -22,7 +29,11 @@ function queryTmdb(e) {
 		})
 		.then(response => response.json())
 		.then(result => {
-			console.log(result);
+			if (result.success) {
+				
+			} else {
+				throw new Error(result.success, result.data);
+			}
 		})
 		.finally(() => endLoad(button))
 		.catch(err => console.error(err))
