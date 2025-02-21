@@ -6,8 +6,8 @@ services:
       - '5155:5155'
       - '9229:9229'
     volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
+      - .:/home/app
+      - /home/app/node_modules
     environment:
       - NODE_ENV=development
       - DEBUG=express:*
