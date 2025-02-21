@@ -16,7 +16,7 @@ const tmdbOptions = {
 };
 
 const googleWatchlistUrl = process.env.GOOGLE_WATCHLIST_URL;
-const overrideCache = process.env.OVERRIDE_CACHE;
+const overrideCache = process.env.OVERRIDE_CACHE || false;
 const unknownsFile = './cache/unknowns.json';
 
 // Scrape Google Watchlist
@@ -68,6 +68,7 @@ async function fetchMovieData(movie, movieData = {}, resultIndex = 0) {
 	};
 
 	try {
+		console.log(movie, movieData.releaseYear);
 		const response = await axios.get(
 			'https://api.themoviedb.org/3/search/' + (movieData.mediaType || 'multi') + '?include_adult=false&language=en-US&page=1&query=' + encodeURIComponent(movie) + (movieData.releaseYear ? '&year=' + movieData.releaseYear : ''),
 			tmdbOptions
@@ -90,7 +91,7 @@ async function fetchMovieData(movie, movieData = {}, resultIndex = 0) {
 				releaseYear: year,
 				mediaType: result.media_type,
 				dateAdded: Date.now(),
-				googleSearchUrl: 'https://google.ca/search?q=' + encodeURIComponent(title)
+				googleSearchUrl: 'https://google.ca/search?q=' + encodeURIComponent(titleYear)
 			};
 		}
 	} catch (err) {
@@ -161,29 +162,34 @@ async function createUnknownsFile(data) {
 
 		if (item.id === 0) {
 			item.unknownStatus = 'unmatched';
+			item.googleSearchUrl = 'https://google.ca/search?q=' + encodeURIComponent(item.googleTitle);
 		}
 
 		if (titleCount[key] > 1) {
 			item = { ...item, ...fallback };
-			item.unknownStatus = 'duplicate';
+			item.unknownStatus = 'duplicate' + (titleCount[key] || '');
+			item.googleSearchUrl = 'https://google.ca/search?q=' + encodeURIComponent(item.googleTitle);
 			duplicates.push(item);
 		}
 
 		if (item.mediaType === 'person') {
 			item = { ...item, ...fallback };
 			item.unknownStatus = 'unmatched';
+			item.googleSearchUrl = 'https://google.ca/search?q=' + encodeURIComponent(item.googleTitle);
 		}
 	});
 
 	// For each duplicate, re-query using resultIndex = 1.
+	/*
 	const reRunDuplicates = [];
 	for (const dup of duplicates) {
 		console.log(`Re-querying duplicate: ${dup.title}`);
 		const fixed = await fetchMovieData(dup.title, {googleTitle: dup.googleTitle}, 1);
 		reRunDuplicates.push(fixed && fixed.id !== dup.id ? fixed : dup);
 	}
+	*/
 
-	const unknowns = [...people, ...unmatched, ...reRunDuplicates];
+	const unknowns = [...people, ...unmatched, ...duplicates];
 	console.log(`Found ${unknowns.length} unknown items.`);
 	const unknownsData = { generated: Date.now(), data: unknowns };
 	fs.writeFileSync(unknownsFile, JSON.stringify(unknownsData, null, 2));

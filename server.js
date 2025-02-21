@@ -14,6 +14,7 @@ const { slugify } = require('./utils');
 
 const app = express();
 const PORT = process.env.PORT || 5155;
+const overrideCache = process.env.OVERRIDE_CACHE || false;
 
 const watchlistFile = './cache/watchlist.json';
 const unknownsFile = './cache/unknowns.json';
@@ -140,7 +141,7 @@ app.post('/query', async (req, res) => {
 		fs.writeFileSync(unknownsFile, JSON.stringify(unknowns));
 	}
 	// remove no longer unknown data
-	//unknowns.data = unknowns.data.filter(item => slugify(item.googleTitle) !== slugify(movie.googleTitle));
+	unknowns.data = unknowns.data.filter(item => slugify(item.googleTitle) !== slugify(movie.googleTitle));
 
 	unknowns.data = unknowns.data.map(unknownMovie => {
 		if (slugify(unknownMovie.googleTitle) == slugify(movie.googleTitle)) {
