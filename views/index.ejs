@@ -49,6 +49,7 @@
 		<% } else { %>
 			<% movies.forEach(function(movie, i) { %>
 				<form action="/query" id="movie-<%= i %>" method="POST" class="movie <%= movie.id ? '' : 'is-unknown' %>">
+					<input type="hidden" name="uuid" value="<%= movie.uuid %>" />
 					<input type="hidden" name="googleTitle" value="<%= movie.googleTitle %>" />
 
 					<% if (movie.unknownStatus) { %>
@@ -60,7 +61,7 @@
 					<% } %>
 
 					<fieldset>
-						<label for="title">Title:</label>
+						<label for="title">Title: <%= movie.uuid %></label>
 						<textarea type="text" name="title" placeholder="A Space Odyssey"><%= movie.title %></textarea>
 					</fieldset>
 					<fieldset>

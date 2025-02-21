@@ -5,6 +5,7 @@
 const fs = require('fs');
 const axios = require('axios');
 const { JSDOM } = require('jsdom');
+const { v4: uuidv4 } = require('uuid');
 const { slugify } = require('./utils');
 
 const tmdbOptions = {
@@ -57,6 +58,7 @@ async function scrapeWatchlist() {
 // Query TMDB for a movie. If resultIndex is not 0, returns the alternate result.
 async function fetchMovieData(movie, movieData = {}, resultIndex = 0) {
 	const fallback = {
+		uuid: uuidv4(),
 		id: 0,
 		title: movie,
 		googleTitle: movieData.googleTitle,
@@ -84,12 +86,13 @@ async function fetchMovieData(movie, movieData = {}, resultIndex = 0) {
 			const titleYear = title + ' (' + (year || result.media_type) + ')';
 			
 			return {
+				uuid: movieData.uuid || uuidv4(),
 				id: result.id,
 				title,
 				googleTitle: movieData.googleTitle,
 				releaseDate,
 				releaseYear: year,
-				mediaType: result.media_type,
+				mediaType: result.media_type || movieData.mediaType,
 				dateAdded: Date.now(),
 				googleSearchUrl: 'https://google.ca/search?q=' + encodeURIComponent(titleYear)
 			};
@@ -157,7 +160,7 @@ async function createUnknownsFile(data) {
 	};
 
 	data.forEach(item => {
-		const key = slugify(item.title);
+		const key = slugify(item.googleTitle);
 		titleCount[key] = (titleCount[key] || 0) + 1;
 
 		if (item.id === 0) {
@@ -180,14 +183,12 @@ async function createUnknownsFile(data) {
 	});
 
 	// For each duplicate, re-query using resultIndex = 1.
-	/*
 	const reRunDuplicates = [];
 	for (const dup of duplicates) {
 		console.log(`Re-querying duplicate: ${dup.title}`);
-		const fixed = await fetchMovieData(dup.title, {googleTitle: dup.googleTitle}, 1);
+		const fixed = await fetchMovieData(dup.title, {uuid: dup.uuid, googleTitle: dup.googleTitle}, 1);
 		reRunDuplicates.push(fixed && fixed.id !== dup.id ? fixed : dup);
 	}
-	*/
 
 	const unknowns = [...people, ...unmatched, ...duplicates];
 	console.log(`Found ${unknowns.length} unknown items.`);

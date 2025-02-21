@@ -7,6 +7,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
+const { v4: uuidv4 } = require('uuid');
 
 const { scrapeWatchlist, collectMovieData, combineWatchlists, createUnknownsFile, fetchMovieData } = require('./tmdb');
 const { sendOverseerrRequest } = require('./overseerr');
@@ -123,7 +124,7 @@ app.post('/query', async (req, res) => {
 	}
 	
 	cached.data = cached.data.map(cachedMovie => {
-		if (slugify(cachedMovie.googleTitle) == slugify(movie.googleTitle)) {
+		if (cachedMovie.uuid == movie.uuid) {
 			return { ...cachedMovie, ...updatedMovie };
 		}
 		return cachedMovie;
@@ -141,10 +142,10 @@ app.post('/query', async (req, res) => {
 		fs.writeFileSync(unknownsFile, JSON.stringify(unknowns));
 	}
 	// remove no longer unknown data
-	unknowns.data = unknowns.data.filter(item => slugify(item.googleTitle) !== slugify(movie.googleTitle));
+	unknowns.data = unknowns.data.filter(unknownMovie => unknownMovie.uuid !== movie.uuid);
 
 	unknowns.data = unknowns.data.map(unknownMovie => {
-		if (slugify(unknownMovie.googleTitle) == slugify(movie.googleTitle)) {
+		if (unknownMovie.uuid == movie.uuid) {
 			return { ...unknownMovie, ...updatedMovie };
 		}
 		return unknownMovie;
@@ -152,7 +153,7 @@ app.post('/query', async (req, res) => {
 
 	fs.writeFileSync(unknownsFile, JSON.stringify(unknowns, null, 2));
 
-	return res.json({success: true, data: { cached: cached.data, unknowns: unknowns.data }});
+	return res.json({success: true, data: { updated: updatedMovie, removed: unknownMovie }});
 });
 
 // Form submission endpoint to update unknown and re-query TMDB
