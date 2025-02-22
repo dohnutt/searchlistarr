@@ -184,7 +184,9 @@ async function createUnknownlist(data) {
 					'https://google.ca/search?q=' + encodeURIComponent(item.googleTitle);
 				unknowns.push(updated);
 			} else {
-				unknowns.push(item);
+				if (item.unknownStatus) {
+					unknowns.push(item);
+				}
 			}
 		}
 	}
