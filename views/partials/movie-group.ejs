@@ -1,0 +1,6 @@
+<div class="movie-group">
+	<h4 class="mt-0"><%= movies[0].title %></h4>
+	<% movies.forEach(function(movie, i) { %>
+		<%- include('movie.ejs',{movie, i, isDup: true}) %>
+	<% }); %>
+</div>

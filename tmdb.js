@@ -18,7 +18,7 @@ const tmdbOptions = {
 
 const googleWatchlistUrl = process.env.GOOGLE_WATCHLIST_URL;
 const overrideCache = process.env.OVERRIDE_CACHE || false;
-const unknownsFile = './cache/unknowns.json';
+const unknownlist = './cache/unknownlist.json';
 
 // Scrape Google Watchlist
 async function scrapeWatchlist() {
@@ -144,59 +144,61 @@ function combineWatchlists(newData, cachedData) {
 }
 
 // Create the unknowns file – includes items with mediaType "person", id 0, or duplicates.
-async function createUnknownsFile(data) {
-	const people = data.filter(item => item.mediaType === 'person');
-	const unmatched = data.filter(item => item.id === 0);
-	const titleCount = {};
-	const duplicates = [];
+async function createUnknownlist(data) {
 	const fallback = {
 		id: 0,
 		releaseDate: null,
 		releaseYear: null,
-		//mediaType: null,
 	};
 
+	// Group items by slugified googleTitle.
+	const groups = {};
 	data.forEach(item => {
 		const key = slugify(item.googleTitle);
-		titleCount[key] = (titleCount[key] || 0) + 1;
-
-		if (item.id === 0) {
-			item.unknownStatus = 'unmatched';
-			item.googleSearchUrl = 'https://google.ca/search?q=' + encodeURIComponent(item.googleTitle);
+		if (!groups[key]) {
+			groups[key] = [];
 		}
-
-		if (titleCount[key] > 1) {
-			item = { ...item, ...fallback };
-			item.unknownStatus = 'duplicate' + (titleCount[key] || '');
-			item.googleSearchUrl = 'https://google.ca/search?q=' + encodeURIComponent(item.googleTitle);
-			duplicates.push(item);
-		}
-
-		if (item.mediaType === 'person') {
-			item = { ...item, ...fallback };
-			item.unknownStatus = 'unmatched';
-			item.googleSearchUrl = 'https://google.ca/search?q=' + encodeURIComponent(item.googleTitle);
-		}
+		groups[key].push(item);
 	});
 
-	// For each duplicate, re-query using resultIndex = 1.
-	const reRunDuplicates = [];
-	for (const dup of duplicates) {
-		console.log(`Re-querying duplicate: ${dup.title}`);
-		const fixed = await fetchMovieData(dup.title, {uuid: dup.uuid, googleTitle: dup.googleTitle}, 1);
-		reRunDuplicates.push(fixed && fixed.id !== dup.id ? fixed : dup);
+	// Build a flat array of unknowns.
+	const unknowns = [];
+	for (const key in groups) {
+		const group = groups[key];
+		if (group.length > 1) {
+			// Group has duplicates; update each item and add them consecutively.
+			group.forEach(item => {
+				const updated = { ...item, ...fallback };
+				updated.unknownStatus = 'duplicate';
+				updated.googleSearchUrl =
+					'https://google.ca/search?q=' + encodeURIComponent(item.googleTitle);
+				unknowns.push(updated);
+			});
+		} else {
+			// Single item group.
+			const item = group[0];
+			if (item.id === 0 || item.mediaType === 'person') {
+				const updated = { ...item, ...fallback };
+				updated.unknownStatus = 'unmatched';
+				updated.googleSearchUrl =
+					'https://google.ca/search?q=' + encodeURIComponent(item.googleTitle);
+				unknowns.push(updated);
+			} else {
+				unknowns.push(item);
+			}
+		}
 	}
 
-	const unknowns = [...people, ...unmatched, ...duplicates];
-	console.log(`Found ${unknowns.length} unknown items.`);
-	const unknownsData = { generated: Date.now(), data: unknowns };
-	fs.writeFileSync(unknownsFile, JSON.stringify(unknownsData, null, 2));
+	console.log(`Found ${unknowns.length} unknown items (flat array with duplicates grouped).`);
+	return unknowns;
 }
+
+
 
 module.exports = {
 	scrapeWatchlist,
 	fetchMovieData,
 	collectMovieData,
 	combineWatchlists,
-	createUnknownsFile
+	createUnknownlist
 };

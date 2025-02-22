@@ -4,21 +4,21 @@
 
 require('dotenv').config();
 const express = require('express');
-const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
-const { scrapeWatchlist, collectMovieData, combineWatchlists, createUnknownsFile, fetchMovieData } = require('./tmdb');
+const { scrapeWatchlist, collectMovieData, combineWatchlists, createUnknownlist, fetchMovieData } = require('./tmdb');
 const { sendOverseerrRequest } = require('./overseerr');
-const { slugify } = require('./utils');
+const { slugify, normalize, jsonForFile } = require('./utils');
+const { render } = require('ejs');
 
 const app = express();
 const PORT = process.env.PORT || 5155;
 const overrideCache = process.env.OVERRIDE_CACHE || false;
 
 const watchlistFile = './cache/watchlist.json';
-const unknownsFile = './cache/unknowns.json';
+const unknownlistFile = './cache/unknownlist.json';
 
 // Set up EJS as the view engine
 app.set('view engine', 'ejs');
@@ -31,15 +31,15 @@ app.use(express.static('public'));
 
 // Main endpoint: display unknown items
 app.get('/', (req, res) => {
-	let unknownsData = { data: [] };
-	let watchlistData = { data: [] };
+	let unknownsData = [],
+		watchlistData = [];
 
 	try {
-		unknownsData = JSON.parse(fs.readFileSync(unknownsFile, 'utf8'));
+		unknownsData = JSON.parse(fs.readFileSync(unknownlistFile, 'utf8'));
 	} catch (e) {
 		console.error('Error reading unknowns file:', e);
-		console.log('⚠️ Creating ' + unknownsFile + ' from scratch. Re-run to try again.');
-		fs.writeFileSync(unknownsFile, JSON.stringify(unknownsData));
+		console.log('⚠️ Creating ' + unknownlistFile + ' from scratch. Re-run to try again.');
+		fs.writeFileSync(unknownlistFile, jsonForFile(unknownsData));
 	}
 
 	try {
@@ -47,15 +47,30 @@ app.get('/', (req, res) => {
 	} catch (e) {
 		console.error('Error reading watchlist file:', e);
 		console.log('⚠️ Creating ' + watchlistFile + ' from scratch. Re-run to try again.');
-		fs.writeFileSync(watchlistFile, JSON.stringify(watchlistData));
+		fs.writeFileSync(watchlistFile, jsonForFile(watchlistData));
+	}
+
+	const unknownsCount = unknownsData.data.length || 0;
+	const watchlistCount = watchlistData.data.length || 0;
+	let pageMovies = watchlistData.data;
+	let q = req.query.q || '';
+
+	if (q.length) {
+		const normalQ = normalize(q);
+		pageMovies = pageMovies.filter(m => {
+			return normalize(m.title).indexOf(normalQ) > -1;
+		});
+
+		console.log(`Search for ${q} returned ${pageMovies.length} results`);
 	}
 
 	res.render('index', {
 		title: 'Your watchlist',
-		movies: watchlistData.data,
+		movies: pageMovies,
+		search: q,
 		stats: {
-			watchlist: watchlistData.data.length,
-			unknowns: unknownsData.data.length
+			watchlist: watchlistCount,
+			unknowns: unknownsCount
 		},
 		nav: {
 			currentPage: 'watchlist',
@@ -66,15 +81,15 @@ app.get('/', (req, res) => {
 
 // Main endpoint: display unknown items
 app.get('/unknowns', (req, res) => {
-	let unknownsData = { data: [] };
-	let watchlistData = { data: [] };
+	let unknownsData = [],
+		watchlistData = [];
 
 	try {
-		unknownsData = JSON.parse(fs.readFileSync(unknownsFile, 'utf8'));
+		unknownsData = JSON.parse(fs.readFileSync(unknownlistFile, 'utf8'));
 	} catch (e) {
 		console.error('Error reading unknowns file:', e);
-		console.log('⚠️ Creating ' + unknownsFile + ' from scratch. Re-run to try again.');
-		fs.writeFileSync(unknownsFile, JSON.stringify(unknownsData));
+		console.log('⚠️ Creating ' + unknownlistFile + ' from scratch. Re-run to try again.');
+		fs.writeFileSync(unknownlistFile, jsonForFile(unknownsData));
 	}
 
 	try {
@@ -82,19 +97,34 @@ app.get('/unknowns', (req, res) => {
 	} catch (e) {
 		console.error('Error reading watchlist file:', e);
 		console.log('⚠️ Creating ' + watchlistFile + ' from scratch. Re-run to try again.');
-		fs.writeFileSync(watchlistFile, JSON.stringify(watchlistData));
+		fs.writeFileSync(watchlistFile, jsonForFile(watchlistData));
+	}
+
+	const unknownsCount = unknownsData.data.length || 0;
+	const watchlistCount = watchlistData.data.length || 0;
+	let pageMovies = unknownsData.data;
+	let q = req.query.q || '';
+
+	if (q.length) {
+		const normalQ = normalize(q);
+		pageMovies = pageMovies.filter(m => {
+			return normalize(m.title).indexOf(normalQ) > -1;
+		});
+
+		console.log(`Search for ${q} returned ${pageMovies.length} results`);
 	}
 
 	res.render('index', {
 		title: 'Unknown media',
-		movies: unknownsData.data,
+		movies: pageMovies,
+		search: q,
 		stats: {
-			watchlist: watchlistData.data.length,
-			unknowns: unknownsData.data.length
+			watchlist: watchlistCount,
+			unknowns: unknownsCount
 		},
 		nav: {
 			currentPage: 'unknowns',
-			overseerUrl: process.env.OVERSEER_URL
+			overseerUrl: process.env.OVERSEERR_URL
 		}
 	});
 });
@@ -108,19 +138,17 @@ app.post('/query', async (req, res) => {
 	const updatedMovie = await fetchMovieData(movie.title, movie) || null;
 	if (!updatedMovie || updatedMovie.id === 0) {
 		console.log('No results for:', movie.title);
-		return res.json({success: false})
+		return res.json({success: false, data: 'No results for: ' + movie.title})
 	}
 
-	console.log('Found metadata:', updatedMovie);
-
 	// Update local watchlist cache
-	let cached = { data: [] };
+	let cached = {};
 	try {
 		cached = JSON.parse(fs.readFileSync(watchlistFile, 'utf8'));
 	} catch (e) {
 		console.error('Error reading watchlist file:', e);
 		console.log('⚠️ Creating ' + watchlistFile + ' from scratch. Re-run to try again.');
-		fs.writeFileSync(watchlistFile, JSON.stringify(cached));
+		fs.writeFileSync(watchlistFile, jsonForFile(cached));
 	}
 	
 	cached.data = cached.data.map(cachedMovie => {
@@ -129,17 +157,15 @@ app.post('/query', async (req, res) => {
 		}
 		return cachedMovie;
 	});
-	
-	fs.writeFileSync(watchlistFile, JSON.stringify(cached));
 
 	// Remove from unknowns cache
-	let unknowns = { data: [] };
+	let unknowns = {};
 	try {
-		unknowns = JSON.parse(fs.readFileSync(unknownsFile, 'utf8'));
+		unknowns = JSON.parse(fs.readFileSync(unknownlistFile, 'utf8'));
 	} catch (e) {
 		console.error('Error reading unknowns file:', e);
-		console.log('⚠️ Creating ' + unknownsFile + ' from scratch. Re-run to try again.');
-		fs.writeFileSync(unknownsFile, JSON.stringify(unknowns));
+		console.log('⚠️ Creating ' + unknownlistFile + ' from scratch. Re-run to try again.');
+		fs.writeFileSync(unknownlistFile, jsonForFile(unknowns));
 	}
 	// remove no longer unknown data
 	unknowns.data = unknowns.data.filter(unknownMovie => unknownMovie.uuid !== movie.uuid);
@@ -151,33 +177,31 @@ app.post('/query', async (req, res) => {
 		return unknownMovie;
 	});
 
-	fs.writeFileSync(unknownsFile, JSON.stringify(unknowns, null, 2));
+	fs.writeFileSync(watchlistFile, jsonForFile(cached.data));
+	fs.writeFileSync(unknownlistFile, jsonForFile(unknowns.data));
 
-	return res.json({success: true, data: { updated: updatedMovie, removed: unknownMovie }});
+	return res.json({success: true, data: { updated: updatedMovie }});
 });
 
 // Form submission endpoint to update unknown and re-query TMDB
 app.post('/request', async (req, res) => {
-	console.log(req);
 	const { id, mediaType } = req.body;
 	const movie = { id: id, mediaType: mediaType };
 
-	return;
-
 	// Make a media request to Overseerr
 	try {
-		await sendOverseerrRequest(movie);
+		//await sendOverseerrRequest(movie);
 		console.log("Overseerr request sent.");
+		return res.json({success: true, data: movie});
 	} catch (error) {
 		console.error("Error sending Overseerr request:", error);
 	}
 
-	//res.redirect('/');
-	return res.send('Request complete.');
+	return res.json({success: false, data: movie});
 });
 
 // A manual endpoint to run the entire process (scrape, update cache, unknowns, etc.)
-app.post('/run', async (req, res) => {
+app.get('/run', async (req, res) => {
 	let cached = { data: [] };
 	
 	try {
@@ -185,7 +209,7 @@ app.post('/run', async (req, res) => {
 	} catch (e) {
 		console.error('Error reading watchlist file:', e);
 		console.log('⚠️ Creating ' + watchlistFile + ' from scratch. Re-run to try again.');
-		fs.writeFileSync(watchlistFile, JSON.stringify(cached));
+		fs.writeFileSync(watchlistFile, jsonForFile(cached));
 	}
 
 	// 1. Scrape Google Watchlist.
@@ -195,15 +219,16 @@ app.post('/run', async (req, res) => {
 	const newData = await collectMovieData(scraped, cached.data);
 
 	// 3. Merge with cache (this also handles duplicate resolution)
-	const combined = combineWatchlists(newData, cached.data);
+	const combinedData = combineWatchlists(newData, cached.data);
 
 	// Write updated watchlist cache.
-	fs.writeFileSync(watchlistFile, JSON.stringify({ generated: Date.now(), data: combined }, null, 2));
+	fs.writeFileSync(watchlistFile, jsonForFile(combinedData));
 
-	// 4. Create unknowns file (this re-queries duplicates and stores people/id=0)
-	await createUnknownsFile(combined);
+	// 4. Find unknowns (duplicates, id=0, mediaType=person)
+	const unknownsData = await createUnknownlist(combinedData);
+	fs.writeFileSync(unknownlistFile, jsonForFile(unknownsData));
 
-	return res.json({success: true, message: "Process complete. Check logs and WebUI for unknowns."});
+	return res.json({success: true});
 });
 
 app.listen(PORT, () => {

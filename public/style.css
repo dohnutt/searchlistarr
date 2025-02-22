@@ -91,14 +91,29 @@ fieldset {
 	margin: 0 0 1em;
 }
 
+.icon {
+	display: inline-block;
+	line-height: 1;
+	vertical-align: middle;
+}
+
+.icon svg {
+	overflow: hidden;
+	display: inline-block;
+	width: 1.125em;
+	height: 1.125em;
+	fill: currentColor;
+}
+
 button {
+	--button-bg: var(--blue);
 	font-family: inherit;
 	font-size: inherit;
-	padding: 0.475rem 1rem 0.525rem;
+	padding: 0.5rem 1rem 0.5555555556rem;
 	line-height: 1.5;
 	border-radius: 1.5em;
 	color: var(--background);
-	background: var(--blue);
+	background: var(--button-bg);
 	border: 1px solid rgb(255 255 255 / 25%);
 	box-shadow: 0.05em 0.125em 0.5em 0 rgb(0 0 0 / 75%);
 	cursor: pointer;
@@ -106,7 +121,7 @@ button {
 }
 
 button:hover, button:focus {
-	background: color-mix(in srgb, var(--blue) 75%, white)
+	--button-bg: color-mix(in srgb, var(--blue) 75%, white);
 }
 
 .button-link {
@@ -124,12 +139,32 @@ button:hover, button:focus {
 }
 
 .button-overseerr {
-	background-image: linear-gradient(to bottom right, #4f46e5, #9333ea);
+	--button-bg: linear-gradient(to bottom right, #4f46e5, #9333ea);
 	color: white;
 }
 
-.button-overseerr:hover, .button-overseerr:focus {
-	background-image: linear-gradient(to bottom right, #2d26ad, #6f1abe);
+.button-overseerr:not(.loaded):not(.errored):hover, .button-overseerr:not(.loaded):not(.errored):focus {
+	--button-bg: linear-gradient(to bottom right, #352ebc, #7621c5);
+}
+
+button.loaded .main-icon,
+button.errored .main-icon,
+button .check,
+button .x {
+	display: none;
+}
+
+button.loaded {
+	--button-bg: var(--green);
+	color: white;
+}
+button.errored {
+	--button-bg: var(--red);
+	color: white;
+}
+
+button.loaded .check, button.errored .x {
+	display: inline-block;
 }
 
 button:disabled, button:disabled:hover, button:disabled:focus {
@@ -141,24 +176,23 @@ button:disabled, button:disabled:hover, button:disabled:focus {
 	color: white;
 }
 
-input[type="text"], input[type="number"], textarea, select {
+input[type="text"], input[type="number"], input[type="search"], textarea, select {
 	font-family: inherit;
 	font-size: inherit;
 	display: block;
 	width: 100%;
-	padding: 0.475rem 1rem 0.525rem;
+	padding: 0.5rem 0;
 	line-height: 1.5;
-	background: rgb(255 255 255 / 20%);
-	border: 1px solid rgb(255 255 255 / 25%);
+	/*background: rgb(255 255 255 / 20%);*/
+	background: transparent;
+	border-bottom: 1px solid rgb(255 255 255 / 25%);
 	color: white;
 	transition: color 0.2s ease, background 0.2s ease;
-	border-radius: 1.5em;
-	min-height: 2.5rem;
 }
 
 input[type="text"]:hover, input[type="number"]:hover, textarea:hover, select:hover,
 input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus {
-	background: rgb(255 255 255 / 15%);
+	background: rgb(255 255 255 / 5%);
 }
 
 input[type="text"][width] {
@@ -200,14 +234,41 @@ label, legend {
 	color: var(--background);
 }
 
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0,0,0,0);
+	border: 0;
+}
 
-.movie {
+.movie, .movie-group {
 	background: rgb(0 0 0 / 20%);
 	border: 1px solid rgb(255 255 255 / 10%);
 	border-radius: 1.5rem;
 	padding: 2em;
 	margin: 0 0 2em;
 	position: relative;
+}
+
+.movie-group {}
+
+.movie-group .movie {
+	margin: 0;
+	border-radius: 0;
+	border-bottom-width: 0;
+}
+
+.movie-group .movie:first-of-type {
+	border-radius: 1.5rem 1.5rem 0 0;
+}
+
+.movie-group .movie:last-of-type {
+	border-radius: 0 0 1.5rem 1.5rem;
+	border-bottom-width: 1px;
 }
 
 .is-unknown {
@@ -220,18 +281,28 @@ label, legend {
 	right: 2rem;
 }
 
-.icon {
-	display: inline-block;
-	line-height: 1;
-	vertical-align: middle;
+.search {
+	margin-bottom: 2em;
+	position: relative;
 }
 
-.icon svg {
-	overflow: hidden;
-	display: inline-block;
-	width: 1.125em;
-	height: 1.125em;
-	fill: currentColor;
+.search input {
+	padding-left: 2.5rem;
+}
+
+.search button {
+	position: absolute;
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+	padding: 0.5277777778rem;
+	color: rgb(255 255 255 / 50%);
+	bottom: 0;
+	z-index: 2;
+}
+
+.search button[type="reset"] {
+	right: 0;
 }
 
 .spin {
@@ -257,6 +328,14 @@ body .dn, body [hidden] {
 
 .opacity-muted {
 	opacity: 0.7;
+}
+
+.mt-0 {
+	margin-top: 0;
+}
+
+.mb-0 {
+	margin-bottom: 0;
 }
 
 @media screen and (min-width: 992px) {
