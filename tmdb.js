@@ -56,35 +56,32 @@ async function scrapeWatchlist() {
 }
 
 // Query TMDB for a movie. If resultIndex is not 0, returns the alternate result.
-async function fetchMovieData(movie, movieData = {}, resultIndex = 0) {
+async function fetchMovieData(movieTitle, movieData = {}, resultIndex = 0) {
 	const fallback = {
 		uuid: uuidv4(),
 		id: 0,
-		title: movie,
+		title: movieTitle,
 		googleTitle: movieData.googleTitle,
 		releaseDate: null,
 		releaseYear: null,
 		mediaType: null,
 		dateAdded: Date.now(),
-		googleSearchUrl: 'https://google.ca/search?q=' + encodeURIComponent(movie)
+		googleSearchUrl: 'https://google.ca/search?q=' + encodeURIComponent(movieTitle)
 	};
 
 	try {
-		console.log(movie, movieData.releaseYear);
 		const response = await axios.get(
-			'https://api.themoviedb.org/3/search/' + (movieData.mediaType || 'multi') + '?include_adult=false&language=en-US&page=1&query=' + encodeURIComponent(movie) + (movieData.releaseYear ? '&year=' + movieData.releaseYear : ''),
+			'https://api.themoviedb.org/3/search/' + (movieData.mediaType || 'multi') + '?include_adult=false&language=en-US&page=1&query=' + encodeURIComponent(movieTitle) + (movieData.releaseYear ? '&year=' + movieData.releaseYear : ''),
 			tmdbOptions
 		);
 		const results = response.data.results;
 		if (!results || results.length === 0) return fallback;
-		let result = results[resultIndex];
-		
+		const result = results[resultIndex];
 		if (result) {
 			const title = result.title || result.name;
 			const releaseDate = result.release_date || result.first_air_date;
 			const year = releaseDate ? new Date(releaseDate).getFullYear() : null;
 			const titleYear = title + ' (' + (year || result.media_type) + ')';
-			
 			return {
 				uuid: movieData.uuid || uuidv4(),
 				id: result.id,
