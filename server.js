@@ -148,18 +148,17 @@ app.post('/query', async (req, res) => {
 	return res.json({success: true, data: { updated: updatedMovie }});
 });
 
-// Form submission endpoint to update unknown and re-query TMDB
+// Endpoint to send Overseerr request
 app.post('/request', async (req, res) => {
-	const { id, mediaType } = req.body;
-	const movie = { id: id, mediaType: mediaType };
+	const { uuid, id, mediaType } = req.body;
+	const movie = { uuid, id, mediaType };
 
-	// Make a media request to Overseerr
 	try {
-		//await sendOverseerrRequest(movie);
-		console.log("Overseerr request sent.");
+		await sendOverseerrRequest(movie);
+		console.log('Overseerr request sent:', movie.id);
 		return res.json({success: true, data: movie});
-	} catch (error) {
-		console.error("Error sending Overseerr request:", error);
+	} catch (err) {
+		console.error('Error sending Overseerr request:', err);
 	}
 
 	return res.json({success: false, data: movie});
