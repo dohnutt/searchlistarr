@@ -12,6 +12,7 @@ const { scrapeWatchlist, collectMovieData, combineWatchlists, createUnknownlist,
 const { sendOverseerrRequest } = require('./overseerr');
 const { slugify, normalize, jsonForFile } = require('./utils');
 const { render } = require('ejs');
+const { updateMovie, removeMovie } = require('./operations');
 
 const app = express();
 const PORT = process.env.PORT || 5155;
@@ -129,7 +130,7 @@ app.get('/unknowns', (req, res) => {
 	});
 });
 
-// Form submission endpoint to update unknown and re-query TMDB, then send Overseerr request.
+// Form submission endpoint to update unknown and re-query TMDB
 app.post('/query', async (req, res) => {
 	const movie = req.body;
 	console.log(`Querying ${movie.title} (${movie.releaseYear}) - TMDB ID: ${movie.id}`);
@@ -141,44 +142,8 @@ app.post('/query', async (req, res) => {
 		return res.json({success: false, data: 'No results for: ' + movie.title})
 	}
 
-	// Update local watchlist cache
-	let cached = {};
-	try {
-		cached = JSON.parse(fs.readFileSync(watchlistFile, 'utf8'));
-	} catch (e) {
-		console.error('Error reading watchlist file:', e);
-		console.log('⚠️ Creating ' + watchlistFile + ' from scratch. Re-run to try again.');
-		fs.writeFileSync(watchlistFile, jsonForFile(cached));
-	}
-	
-	cached.data = cached.data.map(cachedMovie => {
-		if (cachedMovie.uuid == movie.uuid) {
-			return { ...cachedMovie, ...updatedMovie };
-		}
-		return cachedMovie;
-	});
-
-	// Remove from unknowns cache
-	let unknowns = {};
-	try {
-		unknowns = JSON.parse(fs.readFileSync(unknownlistFile, 'utf8'));
-	} catch (e) {
-		console.error('Error reading unknowns file:', e);
-		console.log('⚠️ Creating ' + unknownlistFile + ' from scratch. Re-run to try again.');
-		fs.writeFileSync(unknownlistFile, jsonForFile(unknowns));
-	}
-	// remove no longer unknown data
-	unknowns.data = unknowns.data.filter(unknownMovie => unknownMovie.uuid !== movie.uuid);
-
-	unknowns.data = unknowns.data.map(unknownMovie => {
-		if (unknownMovie.uuid == movie.uuid) {
-			return { ...unknownMovie, ...updatedMovie };
-		}
-		return unknownMovie;
-	});
-
-	fs.writeFileSync(watchlistFile, jsonForFile(cached.data));
-	fs.writeFileSync(unknownlistFile, jsonForFile(unknowns.data));
+	updateMovie(movie.uuid, updatedMovie);
+	removeMovie(movie.uuid);
 
 	return res.json({success: true, data: { updated: updatedMovie }});
 });
