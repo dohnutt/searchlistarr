@@ -57,7 +57,6 @@ function requestToOverseerr(e) {
 	})
 		.then(response => response.json())
 		.then(result => {
-			console.log(result);
 			if (result.success) {
 				doSuccessButton(button);
 			} else {
@@ -81,7 +80,6 @@ function fullRescrape(e) {
 	fetch(form.action, { method: form.method, headers: {'Content-Type': 'application/json'} })
 		.then(response => response.json())
 		.then(result => {
-			console.log(result);
 			if (result.success) {
 				doSuccessButton(button);
 			} else {
@@ -89,9 +87,7 @@ function fullRescrape(e) {
 				throw new Error(result.success, result.data);
 			}
 		})
-		.finally(() => {
-			endLoad(button);
-		})
+		.finally(() => endLoad(button))
 		.catch(err => console.error(err));
 
 	return false;
@@ -109,7 +105,6 @@ function endLoad(button) {
 
 function doSuccessButton(button) {
 	button.classList.add('loaded');
-	console.log(button);
 	button.querySelector('svg.check').outerHTML = checkSvg;
 }
 
