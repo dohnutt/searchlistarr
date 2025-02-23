@@ -179,8 +179,8 @@ async function createUnknownlist(data) {
 		if (group.length > 1) {
 			// Group has duplicates; update each item and add them consecutively.
 			group.forEach(item => {
-				const updated = { ...item, ...fallback };
-				updated.unknownStatus = 'duplicate';
+				const updated = { ...fallback, ...item };
+				updated.unknownState = 'duplicate';
 				updated.googleSearchUrl =
 					'https://google.ca/search?q=' + encodeURIComponent(item.googleTitle);
 				unknowns.push(updated);
@@ -188,14 +188,14 @@ async function createUnknownlist(data) {
 		} else {
 			// Single item group.
 			const item = group[0];
-			if (item.id === 0 || item.mediaType === 'person') {
-				const updated = { ...item, ...fallback };
-				updated.unknownStatus = 'unmatched';
+			if (item.id === 0 || item.mediaType === 'person' || !item.releaseYear) {
+				const updated = { ...fallback, ...item };
+				updated.unknownState = 'unmatched';
 				updated.googleSearchUrl =
 					'https://google.ca/search?q=' + encodeURIComponent(item.googleTitle);
 				unknowns.push(updated);
 			} else {
-				if (item.unknownStatus) {
+				if (item.unknownState) {
 					unknowns.push(item);
 				}
 			}
@@ -205,8 +205,6 @@ async function createUnknownlist(data) {
 	console.log(`Found ${unknowns.length} unknown items (flat array with duplicates grouped).`);
 	return unknowns;
 }
-
-
 
 module.exports = {
 	scrapeWatchlist,
