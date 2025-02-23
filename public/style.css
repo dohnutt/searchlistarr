@@ -147,15 +147,9 @@ button:hover, button:focus {
 	color: white;
 }
 
-.button-overseerr:not(.loaded):not(.errored):hover, .button-overseerr:not(.loaded):not(.errored):focus {
+.button-overseerr:not(.loaded):not(.errored):hover,
+.button-overseerr:not(.loaded):not(.errored):focus {
 	--button-bg: linear-gradient(to bottom right, #352ebc, #7621c5);
-}
-
-button.loaded .main-icon,
-button.errored .main-icon,
-button .check,
-button:not(.burg) .x {
-	display: none;
 }
 
 button.loaded {
@@ -165,10 +159,6 @@ button.loaded {
 button.errored {
 	--button-bg: var(--red);
 	color: white;
-}
-
-button.loaded .check, button.errored .x {
-	display: inline-block;
 }
 
 button:disabled, button:disabled:hover, button:disabled:focus {

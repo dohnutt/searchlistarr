@@ -95,12 +95,18 @@ function fullRescrape(e) {
 
 function startLoad(button) {
 	//button.querySelector('svg.x').innerHTML = checkSvg;
+	button.querySelectorAll('.icon').forEach(icon => icon.classList.add('dn'));
 	button.querySelector('.loader').classList.remove('dn');
 }
 
 function endLoad(button) {
 	button.querySelector('.loader').classList.add('dn');
-	setTimeout(() => button.classList.remove('loaded', 'errored'), 5000);
+	button.querySelector('.check-icon').classList.remove('dn');
+	setTimeout(() => {
+		button.classList.remove('loaded', 'errored')
+		button.querySelector('.check-icon').classList.add('dn');
+		button.querySelector('.main-icon').classList.remove('dn');
+	}, 5000);
 }
 
 function doSuccessButton(button) {
