@@ -7,18 +7,10 @@ const axios = require('axios');
 const { JSDOM } = require('jsdom');
 const { v4: uuidv4 } = require('uuid');
 const { slugify } = require('./utils');
-
-const tmdbOptions = {
-	method: 'GET',
-	headers: {
-		accept: 'application/json',
-		Authorization: 'Bearer ' + process.env.TMDB_API_TOKEN
-	}
-};
+const { updateMovie } = require('./operations');
 
 const googleWatchlistUrl = process.env.GOOGLE_WATCHLIST_URL;
 const overrideCache = process.env.OVERRIDE_CACHE || false;
-const unknownlist = './cache/unknownlist.json';
 
 // Scrape Google Watchlist
 async function scrapeWatchlist() {
