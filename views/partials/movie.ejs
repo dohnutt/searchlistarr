@@ -1,5 +1,6 @@
 <form action="/query" id="movie-<%= i %>" method="POST" class="movie <%= movie.unknownStatus ? 'is-unknown' : '' %>">
 	<input type="hidden" name="uuid" value="<%= movie.uuid %>" />
+	<input type="hidden" name="id" value="<%= movie.id %>" />
 	<input type="hidden" name="googleTitle" value="<%= movie.googleTitle %>" />
 
 	<small class="unknown-status opacity-muted">
