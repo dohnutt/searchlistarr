@@ -49,6 +49,8 @@ async function scrapeWatchlist() {
 
 // Query TMDB for a movie. If resultIndex is not 0, returns the alternate result.
 async function fetchMovieData(movieTitle, movieData = {}, resultIndex = 0) {
+	// https://developer.themoviedb.org/docs/image-basics
+	const tmdbImg = 'https://image.tmdb.org/t/p/' + 'w300';
 	const fallback = {
 		uuid: uuidv4(),
 		id: 0,
@@ -57,14 +59,26 @@ async function fetchMovieData(movieTitle, movieData = {}, resultIndex = 0) {
 		releaseDate: null,
 		releaseYear: null,
 		mediaType: null,
+		posterImg: '',
 		dateAdded: Date.now(),
-		googleSearchUrl: 'https://google.ca/search?q=' + encodeURIComponent(movieTitle)
+		googleSearchUrl: 'https://google.ca/search?q=' + encodeURIComponent(movieTitle),
+		status: {
+			known: true,
+			tmdb: false,
+			overseerr: false,
+		}
 	};
 
 	try {
 		const response = await axios.get(
 			'https://api.themoviedb.org/3/search/' + (movieData.mediaType || 'multi') + '?include_adult=false&language=en-US&page=1&query=' + encodeURIComponent(movieTitle) + (movieData.releaseYear ? '&year=' + movieData.releaseYear : ''),
-			tmdbOptions
+			{
+				method: 'GET',
+				headers: {
+					accept: 'application/json',
+					Authorization: 'Bearer ' + process.env.TMDB_API_TOKEN
+				}
+			}
 		);
 		const results = response.data.results;
 		if (!results || results.length === 0) return fallback;
@@ -74,6 +88,7 @@ async function fetchMovieData(movieTitle, movieData = {}, resultIndex = 0) {
 			const releaseDate = result.release_date || result.first_air_date;
 			const year = releaseDate ? new Date(releaseDate).getFullYear() : null;
 			const titleYear = title + ' (' + (year || result.media_type) + ')';
+			
 			return {
 				uuid: movieData.uuid || uuidv4(),
 				id: result.id,
@@ -82,8 +97,14 @@ async function fetchMovieData(movieTitle, movieData = {}, resultIndex = 0) {
 				releaseDate,
 				releaseYear: year,
 				mediaType: result.media_type || movieData.mediaType,
+				posterImg: result.poster_path ? tmdbImg + result.poster_path : null,
 				dateAdded: Date.now(),
-				googleSearchUrl: 'https://google.ca/search?q=' + encodeURIComponent(titleYear)
+				googleSearchUrl: 'https://google.ca/search?q=' + encodeURIComponent(titleYear),
+				status: {
+					known: true,
+					tmdb: true,
+					overseerr: false,
+				}
 			};
 		}
 	} catch (err) {
