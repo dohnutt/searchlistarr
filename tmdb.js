@@ -22,9 +22,7 @@ async function scrapeWatchlist() {
 	for (let i = 0; i <= 5; i++) {
 		try {
 			const response = await axios.get(`${googleWatchlistUrl}?pageNumber=${i + 1}`, {
-				headers: {
-				'User-Agent': 'Mozilla/5.0'
-				}
+				headers: {'User-Agent': 'Mozilla/5.0'}
 			});
 			document = new JSDOM(response.data).window.document;
 			const elements = document.querySelectorAll('[data-hveid] a[aria-label]');
