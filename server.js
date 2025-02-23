@@ -185,11 +185,11 @@ app.get('/run', async (req, res) => {
 	// 3. Merge with cache (this also handles duplicate resolution)
 	const combinedData = combineWatchlists(newData, cached.data);
 
-	// Write updated watchlist cache.
-	fs.writeFileSync(watchlistFile, jsonForFile(combinedData));
-
-	// 4. Find unknowns (duplicates, id=0, mediaType=person)
+	// 4. Find unknowns (duplicates, id=0, mediaType=person, releaseYear=null)
 	const unknownsData = await createUnknownlist(combinedData);
+
+	// Write updated cache files
+	fs.writeFileSync(watchlistFile, jsonForFile(combinedData));
 	fs.writeFileSync(unknownlistFile, jsonForFile(unknownsData));
 
 	return res.json({success: true});
