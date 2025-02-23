@@ -20,6 +20,11 @@ body {
 	line-height: 1.5;
 }
 
+img {
+	max-width: 100%;
+	height: auto;
+}
+
 a, .button-link {
 	color: color-mix(in srgb, var(--blue) 75%, white);
 	transition: color 0.2s ease, background 0.2s ease;
@@ -41,9 +46,8 @@ header {
 
 main {
 	flex-grow: 1;
-	padding: 2rem;
+	padding: 1.333rem 2rem;
 }
-
 
 nav {
 	margin-top: 2rem;
@@ -115,7 +119,7 @@ button {
 	color: var(--background);
 	background: var(--button-bg);
 	border: 1px solid rgb(255 255 255 / 25%);
-	box-shadow: 0.05em 0.125em 0.5em 0 rgb(0 0 0 / 75%);
+	box-shadow: 0.05em 0.125em 1em 0 rgb(0 0 0 / 25%);
 	cursor: pointer;
 	transition: color 0.2s ease, background 0.2s ease, background-image 0.2s ease;
 }
@@ -150,7 +154,7 @@ button:hover, button:focus {
 button.loaded .main-icon,
 button.errored .main-icon,
 button .check,
-button .x {
+button:not(.burg) .x {
 	display: none;
 }
 
@@ -243,17 +247,21 @@ label, legend {
 	clip: rect(0,0,0,0);
 	border: 0;
 }
+	
+.movie-col {
+	position: relative;
+	flex-grow: 1;
+}
 
 .movie, .movie-group {
 	background: rgb(0 0 0 / 20%);
 	border: 1px solid rgb(255 255 255 / 10%);
 	border-radius: 1.5rem;
 	padding: 2em;
-	margin: 0 0 2em;
+	margin: 0 auto 2em;
+	max-width: 1000px;
 	position: relative;
 }
-
-.movie-group {}
 
 .movie-group .movie {
 	margin: 0;
@@ -274,10 +282,11 @@ label, legend {
 	background: rgb(66 13 9 / 20%);
 }
 
-.unknown-status {
+.unknown-state {
 	position: absolute;
-	top: 2rem;
-	right: 2rem;
+	top: -0.5rem;
+	right: 0;
+	z-index: 2;
 }
 
 .search {
@@ -353,6 +362,25 @@ body .dn, body [hidden] {
 	.burg {
 		display: none;
 	}
+
+	.movie-row {
+		display: flex;
+		gap: 2rem;
+	}
+
+	.poster {
+		max-width: 25%;
+		height: auto;
+		align-self: flex-start;
+		flex-shrink: 1;
+	}
+
+	.poster-img {
+		display: block;
+		border: 1px solid rgb(255 255 255 / 15%);
+		border-radius: 0.5rem;
+		box-shadow: 0.05em 0.125em 1em 0 rgb(0 0 0 / 50%);
+	}
 }
 
 @media screen and (max-width: 991px) {
@@ -367,5 +395,36 @@ body .dn, body [hidden] {
 
 	nav.open {
 		display: block;
+	}
+
+	.movie {
+		margin-left: -2rem;
+		margin-right: -2rem;
+		border-radius: 0;
+		border-left-width: 0;
+		border-right-width: 0;
+	}
+
+	.movie-col {
+		z-index: 2;
+	}
+
+	.poster {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		right: 0;
+		aspect-ratio: 2 / 3;
+		z-index: -1;
+		pointer-events: none;
+	}
+
+	.poster-img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: right center;
+		opacity: 0.3;
+		mask-image: linear-gradient(to right, rgb(0 0 0 / 0%), rgb(0 0 0 / 100%));
 	}
 }
