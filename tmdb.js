@@ -6,14 +6,13 @@ const fs = require('fs');
 const axios = require('axios');
 const { JSDOM } = require('jsdom');
 const { v4: uuidv4 } = require('uuid');
-const { slugify } = require('./utils');
-const { updateMovie } = require('./operations');
+const { slugify, deepMerge } = require('./utils');
 
 const googleWatchlistUrl = process.env.GOOGLE_WATCHLIST_URL;
 const overrideCache = process.env.OVERRIDE_CACHE || false;
 
 // Scrape Google Watchlist
-async function scrapeWatchlist() {
+async function scrapeGoogleWatchlist() {
 	let document = {};
 	let items = [];
 	let prevFirstItem = null;
@@ -46,7 +45,7 @@ async function scrapeWatchlist() {
 }
 
 // Query TMDB for a movie. If resultIndex is not 0, returns the alternate result.
-async function fetchMovieData(movieTitle, movieData = {}, resultIndex = 0) {
+async function fetchMovieData(movieTitle, movieData = {}) {
 	// https://developer.themoviedb.org/docs/image-basics
 	const tmdbImg = 'https://image.tmdb.org/t/p/' + 'w300';
 	const fallback = {
@@ -61,17 +60,17 @@ async function fetchMovieData(movieTitle, movieData = {}, resultIndex = 0) {
 		dateAdded: Date.now(),
 		googleSearchUrl: 'https://google.ca/search?q=' + encodeURIComponent(movieTitle),
 		status: {
-			known: true,
+			known: false,
 			tmdb: false,
 			overseerr: false,
-		}
+		},
+		unknownState: 'unmatched'
 	};
 
 	try {
 		const response = await axios.get(
 			'https://api.themoviedb.org/3/search/' + (movieData.mediaType || 'multi') + '?include_adult=false&language=en-US&page=1&query=' + encodeURIComponent(movieTitle) + (movieData.releaseYear ? '&year=' + movieData.releaseYear : ''),
 			{
-				method: 'GET',
 				headers: {
 					accept: 'application/json',
 					Authorization: 'Bearer ' + process.env.TMDB_API_TOKEN
@@ -80,136 +79,135 @@ async function fetchMovieData(movieTitle, movieData = {}, resultIndex = 0) {
 		);
 		const results = response.data.results;
 		if (!results || results.length === 0) return fallback;
-		const result = results[resultIndex];
-		if (result) {
-			const title = result.title || result.name;
-			const releaseDate = result.release_date || result.first_air_date;
-			const year = releaseDate ? new Date(releaseDate).getFullYear() : null;
-			const titleYear = title + ' (' + (year || result.media_type) + ')';
-			
-			return {
-				uuid: movieData.uuid || uuidv4(),
-				id: result.id,
-				title,
-				googleTitle: movieData.googleTitle,
-				releaseDate,
-				releaseYear: year,
-				mediaType: result.media_type || movieData.mediaType,
-				posterImg: result.poster_path ? tmdbImg + result.poster_path : null,
-				dateAdded: Date.now(),
-				googleSearchUrl: 'https://google.ca/search?q=' + encodeURIComponent(titleYear),
-				status: {
-					known: true,
-					tmdb: true,
-					overseerr: false,
-				}
-			};
-		}
+
+		const result = results[0];
+		const title = result.title || result.name;
+		const releaseDate = result.release_date || result.first_air_date;
+		const year = releaseDate ? new Date(releaseDate).getFullYear() : null;
+		const titleYear = title + ' (' + (year || result.media_type) + ')';
+		
+		return {
+			uuid: movieData.uuid || uuidv4(),
+			id: result.id,
+			title,
+			googleTitle: movieData.googleTitle,
+			releaseDate,
+			releaseYear: year,
+			mediaType: result.media_type || movieData.mediaType,
+			posterImg: result.poster_path ? tmdbImg + result.poster_path : null,
+			dateAdded: Date.now(),
+			googleSearchUrl: 'https://google.ca/search?q=' + encodeURIComponent(titleYear),
+			status: {
+				known: true,
+				tmdb: true,
+				overseerr: false,
+			},
+			unknownState: null,
+		};
 	} catch (err) {
 		console.error(err);
 	}
 	return fallback;
 }
 
-// Process a list of movies, skipping those already in cache.
-async function collectMovieData(movies, cachedData = []) {
-	console.log(`Querying TMDB for ${movies.length} movies...`);
+// Process a list of scraped movie titles by querying TMDB,
+// but if a movie was already cached (matched by both title and occurrence index),
+// skip re-querying it.
+async function collectMovieData(scrapedTitles, cachedMovies = []) {
+    console.log(`Querying TMDB for ${scrapedTitles.length} movies...`);
 
-	const cachedMap = cachedData.reduce((map, movie) => {
-		map[slugify(movie.googleTitle)] = movie;
-		return map;
-	}, {});
+    // Create a lookup for cached movies keyed by slugified title.
+    // Instead of a single value, each key holds an array of movies
+    // so that duplicate titles can be stored in order.
+    const cachedMap = cachedMovies.reduce((map, movie) => {
+        // Use the slugified googleTitle as the key.
+        const key = slugify(movie.googleTitle);
+        // If this title hasn't been seen, create an empty array.
+        if (!map[key]) {
+            map[key] = [];
+        }
+        // Add this movie to the array.
+        map[key].push(movie);
+        return map;
+    }, {});
 
-	const movieData = [];
-	for (let i = 0; i < movies.length; i += 5) {
-		const batch = movies.slice(i, i + 5);
-		const batchPromises = batch.map(movieTitle => {
-			const key = slugify(movieTitle);
-			if (cachedMap[key] && !overrideCache) {
-				console.log(`Skipping cached: ${movieTitle}`);
-				return Promise.resolve(cachedMap[key]);
-			} else {
-				console.log(`Querying: ${movieTitle}`);
-				return fetchMovieData(movieTitle, {googleTitle: movieTitle});
-			}
-		});
-		const batchResults = await Promise.all(batchPromises);
-		movieData.push(...batchResults.filter(result => result));
-		await new Promise(resolve => setTimeout(resolve, 25));
-	}
+    const scrapedCounts = {}; // Track how many times we’ve seen a given title in the scraped data.
+    const moviesWithData = []; // Array to hold the resulting movie data.
 
-	return movieData;
+    // Process the scraped titles in batches of 5 to avoid hitting rate limits.
+    for (let i = 0; i < scrapedTitles.length; i += 5) {
+        // Slice the next batch (up to 5 titles).
+        const batch = scrapedTitles.slice(i, i + 5);
+
+        // Map each title in the batch to a promise that either returns cached data
+        // or fetches new data from TMDB.
+        const batchPromises = batch.map((movieTitle) => {
+            // Create a slug key from the movie title.
+            const key = slugify(movieTitle);
+
+            // Increase the occurrence counter for this title.
+            scrapedCounts[key] = (scrapedCounts[key] || 0) + 1;
+            // The occurrence index for the current movie.
+            const occurrenceIndex = scrapedCounts[key];
+
+            // Check if a cached movie exists for this title and occurrence.
+            // We assume cached movies were stored in the same order as they appeared.
+            let cachedMovie = undefined;
+            if (cachedMap[key] && cachedMap[key].length >= occurrenceIndex) {
+                cachedMovie = cachedMap[key][occurrenceIndex - 1]; // adjust for 0-indexing
+            }
+
+            // If we found a cached movie and overrideCache is false, skip querying.
+            if (cachedMovie && !overrideCache) {
+                console.log(`Skipping cached: ${movieTitle} (occurrence ${occurrenceIndex})`);
+                // Wrap the cached movie in a resolved promise.
+                return Promise.resolve(cachedMovie);
+            } else {
+                console.log(`Querying: ${movieTitle} (occurrence ${occurrenceIndex})`);
+                // Query TMDB for fresh metadata.
+                return fetchMovieData(movieTitle, { googleTitle: movieTitle });
+            }
+        });
+
+        // Wait for all queries (or cache hits) in this batch to finish.
+        const batchResults = await Promise.all(batchPromises);
+
+        // Filter out any null/undefined responses and add the results to our final array.
+        moviesWithData.push(...batchResults.filter(result => result));
+
+        // Add a small delay (25ms) between batches to avoid API rate limits.
+        await new Promise(resolve => setTimeout(resolve, 25));
+    }
+
+    // Return the final array of movie data.
+    return moviesWithData;
 }
 
-// Combine new data with cached data, preserving dateAdded.
-function combineWatchlists(newData, cachedData) {
-	const cachedById = cachedData.reduce((map, movie) => {
-		map[movie.id] = movie;
-		return map;
-	}, {});
+// Create the unknowns list – includes items with mediaType="person", id=0, or missing releaseYear,
+// or items that appear as duplicates, unless they have been corrected
+// i.e. status.known && status.tmdb === true
+async function createUnknownlist(movies) {
+	let unknownlist = []
+	
+	movies.forEach(m => {
+		const isUnknown =
+			m.status.known === false ||
+			m.status.tmdb === false ||
+			(m.unknownState && m.unknownState.length);
 
-	return newData.map(movie => {
-		if (cachedById[movie.id]) return { ...movie, dateAdded: cachedById[movie.id].dateAdded };
-		return movie;
-	});
-}
-
-// Create the unknowns file – includes items with mediaType "person", id 0, or duplicates.
-async function createUnknownlist(data) {
-	const fallback = {
-		id: 0,
-		releaseDate: null,
-		releaseYear: null,
-	};
-
-	// Group items by slugified googleTitle.
-	const groups = {};
-	data.forEach(item => {
-		const key = slugify(item.googleTitle);
-		if (!groups[key]) {
-			groups[key] = [];
+		if (isUnknown) {
+			unknownlist.push(m);
 		}
-		groups[key].push(item);
 	});
-
-	// Build a flat array of unknowns.
-	const unknowns = [];
-	for (const key in groups) {
-		const group = groups[key];
-		if (group.length > 1) {
-			// Group has duplicates; update each item and add them consecutively.
-			group.forEach(item => {
-				const updated = { ...fallback, ...item };
-				updated.unknownState = 'duplicate';
-				updated.googleSearchUrl =
-					'https://google.ca/search?q=' + encodeURIComponent(item.googleTitle);
-				unknowns.push(updated);
-			});
-		} else {
-			// Single item group.
-			const item = group[0];
-			if (item.id === 0 || item.mediaType === 'person' || !item.releaseYear) {
-				const updated = { ...fallback, ...item };
-				updated.unknownState = 'unmatched';
-				updated.googleSearchUrl =
-					'https://google.ca/search?q=' + encodeURIComponent(item.googleTitle);
-				unknowns.push(updated);
-			} else {
-				if (item.unknownState) {
-					unknowns.push(item);
-				}
-			}
-		}
-	}
-
-	console.log(`Found ${unknowns.length} unknown items (flat array with duplicates grouped).`);
-	return unknowns;
+	
+    return unknownlist;
 }
+
+
 
 module.exports = {
-	scrapeWatchlist,
+	scrapeGoogleWatchlist,
 	fetchMovieData,
 	collectMovieData,
-	combineWatchlists,
 	createUnknownlist
 };
