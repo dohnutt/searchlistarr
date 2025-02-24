@@ -53,15 +53,8 @@ app.get('/', (req, res) => {
 	const unknownsCount = unknownsData.data.length || 0;
 	const watchlistCount = watchlistData.data.length || 0;
 	let pageMovies = watchlistData.data;
+
 	let q = req.query.q || '';
-
-	const perPage = 25,
-		totalPages = Math.ceil(pageMovies.length / perPage);
-	let currentPage = parseInt(req.query.p) || 0,
-		pageOffset = currentPage * perPage;
-	
-	pageMovies = pageMovies.splice(pageOffset, perPage);
-
 	if (q.length) {
 		const normalQ = normalize(q);
 		pageMovies = pageMovies.filter(m => {
@@ -70,6 +63,12 @@ app.get('/', (req, res) => {
 
 		console.log(`Search for ${q} returned ${pageMovies.length} results`);
 	}
+
+	const perPage = 25,
+		totalPages = Math.ceil(pageMovies.length / perPage);
+	let currentPage = parseInt(req.query.p) || 0,
+		pageOffset = currentPage * perPage;
+	pageMovies = pageMovies.splice(pageOffset, perPage);
 
 	res.render('index', {
 		title: 'Your watchlist',
@@ -117,15 +116,8 @@ app.get('/unknowns', (req, res) => {
 	const unknownsCount = unknownsData.data.length || 0;
 	const watchlistCount = watchlistData.data.length || 0;
 	let pageMovies = unknownsData.data;
+
 	let q = req.query.q || '';
-
-	const perPage = 25,
-		totalPages = Math.ceil(pageMovies.length / perPage);
-	let currentPage = parseInt(req.query.p) || 0,
-		pageOffset = currentPage * perPage;
-	
-	pageMovies = pageMovies.splice(pageOffset, perPage);
-
 	if (q.length) {
 		const normalQ = normalize(q);
 		pageMovies = pageMovies.filter(m => {
@@ -134,6 +126,12 @@ app.get('/unknowns', (req, res) => {
 
 		console.log(`Search for ${q} returned ${pageMovies.length} results`);
 	}
+
+	const perPage = 25,
+		totalPages = Math.ceil(pageMovies.length / perPage);
+	let currentPage = parseInt(req.query.p) || 0,
+		pageOffset = currentPage * perPage;
+	pageMovies = pageMovies.splice(pageOffset, perPage);
 
 	res.render('index', {
 		title: 'Unknown media',
