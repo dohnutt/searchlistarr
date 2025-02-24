@@ -109,7 +109,7 @@ fieldset {
 	fill: currentColor;
 }
 
-button {
+button, .button {
 	--button-bg: var(--blue);
 	font-family: inherit;
 	font-size: inherit;
@@ -124,8 +124,15 @@ button {
 	transition: color 0.2s ease, background 0.2s ease, background-image 0.2s ease;
 }
 
-button:hover, button:focus {
+button:hover, button:focus,
+.button:hover, .button:focus {
 	--button-bg: color-mix(in srgb, var(--blue) 75%, white);
+}
+
+.button-t {
+	background: transparent;
+	color: white;
+	box-shadow: none;
 }
 
 .button-link {
@@ -203,7 +210,7 @@ textarea {
 }
 
 small {
-	font-size: 0.8rem;
+	font-size: 0.8em;
 }
 
 label, legend {
@@ -248,7 +255,7 @@ label, legend {
 	border: 1px solid rgb(255 255 255 / 10%);
 	border-radius: 1.5rem;
 	padding: 2em;
-	margin: 0 auto 2em;
+	margin: 0 auto 1em;
 	max-width: 1000px;
 	position: relative;
 }
@@ -303,6 +310,21 @@ label, legend {
 	right: 0;
 }
 
+.pagination {
+	display: flex;
+	justify-content: space-between;
+	margin: 0 auto 1em;
+	max-width: 1000px;
+}
+
+.pagination > a {
+	display: inline-block;
+}
+
+.pagination .next {
+	margin-left: auto;
+}
+
 .spin {
     animation-name: spin;
     animation-duration: 2s;
@@ -343,6 +365,7 @@ body .dn, body [hidden] {
 	}
 
 	header {
+		width: 320px;
 		height: 100vh;
 		position: sticky;
 		top: 0;
