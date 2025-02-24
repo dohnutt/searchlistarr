@@ -19,7 +19,6 @@
 	<%- include('partials/header.ejs') %>
 
 	<main>
-
 		<h1 class="mt-0 mb-0"><%= title %></h1>
 
 		<form class="search" method="GET">
@@ -30,14 +29,17 @@
 			</button>
 		</form>
 
+		<%- include('partials/pagination.ejs', pagination) %>
+
 		<% if (movies.length === 0) { %>
-			<p>No media found 😎👍</p>
+			<p style="text-align: center;">No media found 😎👍</p>
 		<% } else { %>
 			<% movies.forEach(function(movie, i) { %>
 				<%- include('partials/movie.ejs',{movie, i}) %>
 			<% }); %>
 		<% } %>
 
+		<%- include('partials/pagination.ejs', pagination) %>
 	</main>
 
 	<script type="text/javascript" src="app.js"></script>

@@ -1,0 +1,9 @@
+<div role="navigation" class="pagination">
+	<% if (pagination.current > 0 && pagination.total > pagination.current) { %>
+		<a href="<%= pagination.base %>?p=<%- pagination.prev %>" class="button button-t prev">Prev</a>
+	<% } %>
+
+	<% if (pagination.current < (pagination.total - 1)) { %>
+		<a href="<%= pagination.base %>?p=<%- pagination.next %>" class="button button-t next">Next</a>
+	<% } %>
+</div>
