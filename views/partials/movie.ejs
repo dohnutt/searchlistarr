@@ -1,4 +1,4 @@
-<form action="/query" id="movie-<%= i %>" method="POST" class="movie <%= movie.unknownState ? 'is-unknown' : '' %>">
+<form action="/query" id="movie-<%= i %>" method="POST" class="movie <%= !movie.status.known ? 'is-unknown' : '' %>">
 	<input type="hidden" name="uuid" value="<%= movie.uuid %>" />
 	<input type="hidden" name="id" value="<%= movie.id %>" />
 	<input type="hidden" name="googleTitle" value="<%= movie.googleTitle %>" />
