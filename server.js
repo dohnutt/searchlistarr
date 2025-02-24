@@ -8,15 +8,14 @@ const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
-const { scrapeWatchlist, collectMovieData, combineWatchlists, createUnknownlist, fetchMovieData } = require('./tmdb');
+const { scrapeGoogleWatchlist, collectMovieData, createUnknownlist, fetchMovieData } = require('./tmdb');
 const { sendOverseerrRequest } = require('./overseerr');
 const { slugify, normalize, jsonForFile } = require('./utils');
 const { render } = require('ejs');
-const { updateMovie, removeMovie } = require('./operations');
+const { updateMovie, removeMovie, mergeWatchlists } = require('./operations');
 
 const app = express();
 const PORT = process.env.PORT || 5155;
-const overrideCache = process.env.OVERRIDE_CACHE || false;
 
 const watchlistFile = './cache/watchlist.json';
 const unknownlistFile = './cache/unknownlist.json';
@@ -164,16 +163,16 @@ app.post('/query', async (req, res) => {
 	console.log(`Querying ${movie.title} (${movie.releaseYear}) - TMDB ID: ${movie.id}`);
 
 	// Re-query TMDB with updated info.
-	const updatedMovie = await fetchMovieData(movie.title, movie) || null;
-	if (!updatedMovie || updatedMovie.id === 0) {
+	const movieWithData = await fetchMovieData(movie.title, movie) || null;
+	if (!movieWithData || movieWithData.id === 0) {
 		console.log('No results for:', movie.title);
 		return res.json({success: false, data: 'No results for: ' + movie.title})
 	}
 
-	updateMovie(movie.uuid, updatedMovie);
-	removeMovie(movie.uuid);
+	updateMovie(movieWithData.uuid, movieWithData);
+	removeMovie(movieWithData.uuid);
 
-	return res.json({success: true, data: { updated: updatedMovie }});
+	return res.json({success: true, data: { updated: movieWithData }});
 });
 
 // Endpoint to send Overseerr request
@@ -205,20 +204,20 @@ app.get('/run', async (req, res) => {
 	}
 
 	// 1. Scrape Google Watchlist.
-	const scraped = await scrapeWatchlist();
+	const scrapedTitles = await scrapeGoogleWatchlist();
 
 	// 2. Query TMDB (skipping movies that are in cache).
-	const newData = await collectMovieData(scraped, cached.data);
+	const moviesWithData = await collectMovieData(scrapedTitles, cached.data);
 
-	// 3. Merge with cache (this also handles duplicate resolution)
-	const combinedData = combineWatchlists(newData, cached.data);
+	// 3. Combine queried data with existing cache.
+	const combinedMovies = mergeWatchlists(moviesWithData, cached.data);
 
 	// 4. Find unknowns (duplicates, id=0, mediaType=person, releaseYear=null)
-	const unknownsData = await createUnknownlist(combinedData);
+	const unknownMovies = await createUnknownlist(combinedMovies);
 
 	// Write updated cache files
-	fs.writeFileSync(watchlistFile, jsonForFile(combinedData));
-	fs.writeFileSync(unknownlistFile, jsonForFile(unknownsData));
+	fs.writeFileSync(watchlistFile, jsonForFile(combinedMovies));
+	fs.writeFileSync(unknownlistFile, jsonForFile(unknownMovies));
 
 	return res.json({success: true});
 });
