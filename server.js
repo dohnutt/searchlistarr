@@ -20,6 +20,8 @@ const PORT = process.env.PORT || 5155;
 const watchlistFile = './cache/watchlist.json';
 const unknownlistFile = './cache/unknownlist.json';
 
+const perPage = 50;
+
 // Set up EJS as the view engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -64,8 +66,7 @@ app.get('/', (req, res) => {
 		console.log(`Search for ${q} returned ${pageMovies.length} results`);
 	}
 
-	const perPage = 25,
-		totalPages = Math.ceil(pageMovies.length / perPage);
+	const totalPages = Math.ceil(pageMovies.length / perPage);
 	let currentPage = parseInt(req.query.p) || 0,
 		pageOffset = currentPage * perPage;
 	pageMovies = pageMovies.splice(pageOffset, perPage);
@@ -127,8 +128,7 @@ app.get('/unknowns', (req, res) => {
 		console.log(`Search for ${q} returned ${pageMovies.length} results`);
 	}
 
-	const perPage = 25,
-		totalPages = Math.ceil(pageMovies.length / perPage);
+	const totalPages = Math.ceil(pageMovies.length / perPage);
 	let currentPage = parseInt(req.query.p) || 0,
 		pageOffset = currentPage * perPage;
 	pageMovies = pageMovies.splice(pageOffset, perPage);
