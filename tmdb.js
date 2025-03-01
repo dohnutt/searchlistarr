@@ -9,7 +9,6 @@ const { v4: uuidv4 } = require('uuid');
 const { slugify, deepMerge } = require('./utils');
 
 const googleWatchlistUrl = process.env.GOOGLE_WATCHLIST_URL;
-const overrideCache = process.env.OVERRIDE_CACHE || false;
 
 // Scrape Google Watchlist
 async function scrapeGoogleWatchlist() {
@@ -113,7 +112,7 @@ async function fetchMovieData(movieTitle, movieData = {}) {
 // Process a list of scraped movie titles by querying TMDB,
 // but if a movie was already cached (matched by both title and occurrence index),
 // skip re-querying it.
-async function collectMovieData(scrapedTitles, cachedMovies = []) {
+async function collectMovieData(scrapedTitles, cachedMovies = [], skipCache = false) {
     console.log(`Querying TMDB for ${scrapedTitles.length} movies...`);
 
     // Create a lookup for cached movies keyed by slugified title.
@@ -157,8 +156,8 @@ async function collectMovieData(scrapedTitles, cachedMovies = []) {
                 cachedMovie = cachedMap[key][occurrenceIndex - 1]; // adjust for 0-indexing
             }
 
-            // If we found a cached movie and overrideCache is false, skip querying.
-            if (cachedMovie && !overrideCache) {
+            // If we found a cached movie and skipCache is false, skip querying.
+            if (cachedMovie && !skipCache) {
                 console.log(`Skipping cached: ${movieTitle}`);
                 // Wrap the cached movie in a resolved promise.
                 return Promise.resolve(cachedMovie);

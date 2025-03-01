@@ -11,10 +11,11 @@ const { v4: uuidv4 } = require('uuid');
 
 const { scrapeGoogleWatchlist, collectMovieData, createUnknownlist, fetchMovieData } = require('./tmdb');
 const { sendOverseerrRequest } = require('./overseerr');
-const { normalize, jsonForFile } = require('./utils');
+const { normalize, jsonForFile, getRelativeTimeString } = require('./utils');
 const { updateMovie, removeMovie, mergeWatchlists } = require('./operations');
 const cookieParser = require('cookie-parser');
 
+const settingsFile = './cache/settings.json';
 const watchlistFile = './cache/watchlist.json';
 const unknownlistFile = './cache/unknownlist.json';
 const perPage = 100;
@@ -32,8 +33,17 @@ app.use(express.static('public'));
 
 // Main endpoint: display unknown items
 app.get('/', (req, res) => {
-	let unknownsData = [],
+	let settingsData = [],
+		unknownsData = [],
 		watchlistData = [];
+
+	try {
+		settingsData = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
+	} catch (e) {
+		console.error('Error reading settings file:', e);
+		console.log('⚠️ Creating ' + settingsFile + ' from scratch. Re-run to try again.');
+		fs.writeFileSync(settingsFile, jsonForFile(settingsData));
+	}
 
 	try {
 		unknownsData = JSON.parse(fs.readFileSync(unknownlistFile, 'utf8'));
@@ -93,14 +103,24 @@ app.get('/', (req, res) => {
 			currentUrlWithView: '/?grid=' + viewGrid,
 			currentPage: 'watchlist',
 			overseerUrl: process.env.OVERSEERR_URL
-		}
+		},
+		settings: settingsData.data,
 	});
 });
 
-// Main endpoint: display unknown items
+// Display unknown items
 app.get('/unknowns', (req, res) => {
-	let unknownsData = [],
+	let settingsData = [],
+		unknownsData = [],
 		watchlistData = [];
+
+	try {
+		settingsData = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
+	} catch (e) {
+		console.error('Error reading settings file:', e);
+		console.log('⚠️ Creating ' + settingsFile + ' from scratch. Re-run to try again.');
+		fs.writeFileSync(settingsFile, jsonForFile(settingsData));
+	}
 
 	try {
 		unknownsData = JSON.parse(fs.readFileSync(unknownlistFile, 'utf8'));
@@ -160,8 +180,72 @@ app.get('/unknowns', (req, res) => {
 			currentUrlWithView: '/unknowns?grid=' + viewGrid,
 			currentPage: 'unknowns',
 			overseerUrl: process.env.OVERSEERR_URL
-		}
+		},
+		settings: settingsData.data,
 	});
+});
+
+// Display settings
+app.get('/settings', (req, res) => {
+	let settingsData = [],
+		unknownsData = [],
+		watchlistData = [];
+
+	try {
+		settingsData = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
+	} catch (e) {
+		console.error('Error reading settings file:', e);
+		console.log('⚠️ Creating ' + settingsFile + ' from scratch. Re-run to try again.');
+		fs.writeFileSync(settingsFile, jsonForFile(settingsData));
+	}
+
+	try {
+		unknownsData = JSON.parse(fs.readFileSync(unknownlistFile, 'utf8'));
+	} catch (e) {
+		console.error('Error reading unknowns file:', e);
+		console.log('⚠️ Creating ' + unknownlistFile + ' from scratch. Re-run to try again.');
+		fs.writeFileSync(unknownlistFile, jsonForFile(unknownsData));
+	}
+
+	try {
+		watchlistData = JSON.parse(fs.readFileSync(watchlistFile, 'utf8'));
+	} catch (e) {
+		console.error('Error reading watchlist file:', e);
+		console.log('⚠️ Creating ' + watchlistFile + ' from scratch. Re-run to try again.');
+		fs.writeFileSync(watchlistFile, jsonForFile(watchlistData));
+	}
+
+	const watchlistCount = watchlistData.data.length || 0;
+	const unknownsCount = unknownsData.data.length || 0;
+	const watchlistModified = getRelativeTimeString(new Date(watchlistData.generated));
+	const unknownlistModified = getRelativeTimeString(new Date(unknownsData.generated));
+	const settingsModified = getRelativeTimeString(new Date(settingsData.generated));
+
+	res.render('page', {
+		title: 'Settings',
+		pageTemplate: 'pages/settings.ejs',
+		googleWatchlistUrl: process.env.GOOGLE_WATCHLIST_URL,
+		stats: {
+			watchlist: watchlistCount,
+			watchlistModified,
+			unknowns: unknownsCount,
+			unknownlistModified,
+			settingsModified,
+		},
+		nav: {
+			currentUrl: '/settings',
+			currentPage: 'settings',
+			overseerUrl: process.env.OVERSEERR_URL
+		},
+		settings: settingsData.data,
+	});
+});
+
+// Form submission endpoint to update unknown and re-query TMDB
+app.post('/settings', async (req, res) => {
+	fs.writeFileSync(settingsFile, jsonForFile(req.body));
+
+	return res.json({success: true});
 });
 
 // Form submission endpoint to update unknown and re-query TMDB
@@ -199,8 +283,13 @@ app.post('/request', async (req, res) => {
 });
 
 // A manual endpoint to run the entire process (scrape, update cache, unknowns, etc.)
-app.get('/run', async (req, res) => {
+app.post('/run', async (req, res) => {
 	let cached = { data: [] };
+	const skipCache = process.env.SKIP_CACHE || (parseInt(req.body.force) ? true : false) || false;
+
+	if (skipCache) {
+		console.log('⚠️ Forcefully skipping cache.');
+	}
 	
 	try {
 		cached = JSON.parse(fs.readFileSync(watchlistFile, 'utf8'));
@@ -214,10 +303,10 @@ app.get('/run', async (req, res) => {
 	const scrapedTitles = await scrapeGoogleWatchlist();
 
 	// 2. Query TMDB (skipping movies that are in cache).
-	const moviesWithData = await collectMovieData(scrapedTitles, cached.data);
+	const moviesWithData = await collectMovieData(scrapedTitles, cached.data, skipCache);
 
 	// 3. Combine queried data with existing cache.
-	const combinedMovies = mergeWatchlists(moviesWithData, cached.data);
+	const combinedMovies = mergeWatchlists(moviesWithData, cached.data, skipCache);
 
 	// 4. Find unknowns (duplicates, id=0, mediaType=person, releaseYear=null)
 	const unknownMovies = await createUnknownlist(combinedMovies);

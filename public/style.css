@@ -84,6 +84,11 @@ nav > form {
 	height: 1.5em;
 }
 
+.skip-cache-checkbox {
+	width: 11.05rem;
+	margin: 0.325rem 0 0;
+}
+
 hr {
 	border: 0;
 	border-top: 1px solid rgb(255 255 255 / 15%);
@@ -181,7 +186,7 @@ button:disabled, button:disabled:hover, button:disabled:focus {
 	color: white;
 }
 
-input[type="text"], input[type="number"], input[type="search"], textarea, select {
+input[type="text"], input[type="number"], input[type="search"], textarea, select, .finput {
 	font-family: inherit;
 	font-size: inherit;
 	display: block;
@@ -209,6 +214,10 @@ textarea {
 	resize: none;
 }
 
+.finput {
+	word-break: break-all;
+}
+
 ::placeholder {
 	color: rgba(255 255 255 / 35%);
 }
@@ -222,6 +231,12 @@ label, legend {
 	margin: 0 0 0.325em;
 	font-size: 0.8rem;
 	color: rgb(255 255 255 / 75%);
+	cursor: pointer;
+}
+
+.label-reset {
+	font-size: 1rem;
+	color: inherit;
 }
 
 .radios label {
@@ -254,7 +269,7 @@ label, legend {
 	flex-grow: 1;
 }
 
-.movies {
+.page {
 	margin: 0 auto 1em;
 	max-width: 1000px;
 	min-height: calc(100vh - 380px);
@@ -382,6 +397,25 @@ label, legend {
 	justify-self: center;
 }
 
+.setting {
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: baseline;
+	margin: 2rem 0;
+	gap: 1.5rem;
+}
+
+.setting > .key {
+	width: 200px;
+	flex-shrink: 0;
+	text-align: right;
+	color: rgb(255 255 255 / 75%)
+}
+
+.setting > .value {
+	flex-grow: 1;
+}
+
 .spin {
     animation-name: spin;
     animation-duration: 2s;
@@ -401,6 +435,14 @@ label, legend {
 
 body .dn, body [hidden] {
 	display: none;
+}
+
+body .db {
+	display: block;
+}
+
+.tc {
+	text-align: center;
 }
 
 .opacity-muted {

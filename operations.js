@@ -6,7 +6,7 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { slugify, jsonForFile, deepMerge } = require('./utils');
 
-const overrideCache = process.env.OVERRIDE_CACHE || false;
+const skipCache = process.env.SKIP_CACHE || false;
 const watchlistFile = './cache/watchlist.json';
 const unknownlistFile = './cache/unknownlist.json';
 
@@ -40,27 +40,55 @@ function removeMovie(uuid) {
 	return true;
 }
 
-// Combine new data with cached data, preserving dateAdded.
+// Combine new data with cached data, preserving all cached properties.
 // Also, for movies that appear as duplicates (by googleTitle),
 // if they are not already fully "known" (both status.known and status.tmdb true),
 // then set status.known to false.
-function mergeWatchlists(newData, cachedData) {
-	// Create a lookup object from cached data keyed by movie.id.
-	const cachedById = cachedData.reduce((map, movie) => {
-		map[movie.id] = movie;
-		return map;
+function mergeWatchlists(newData, cachedData, skipCache = false) {
+	if (skipCache) {
+		return newData;
+	}
+
+	// Group the cached movies by a slugified version of their googleTitle.
+	// Each key will map to an array of cached movies in the order they appear.
+	const cachedGroups = cachedData.reduce((groups, movie) => {
+		const key = slugify(movie.googleTitle);
+		if (!groups[key]) groups[key] = [];
+		groups[key].push(movie);
+		return groups;
 	}, {});
   
-	// Merge newData with cachedData to preserve dateAdded.
-	let merged = newData.map(movie => {
-		if (cachedById[movie.id]) {
-			// If the movie exists in the cache, merge in the dateAdded.
-			return { ...movie, dateAdded: cachedById[movie.id].dateAdded };
-		}
-		return movie;
+	// Similarly, group the new data by the slugified googleTitle.
+	const newGroups = newData.reduce((groups, movie) => {
+		const key = slugify(movie.googleTitle);
+		if (!groups[key]) groups[key] = [];
+		groups[key].push(movie);
+		return groups;
+	}, {});
+  
+	// This array will hold the merged movie objects.
+	const merged = [];
+  
+	// For each group in the new data, merge each movie with the corresponding cached movie (if any)
+	Object.keys(newGroups).forEach(key => {
+		const newMovies = newGroups[key];
+		// Get the corresponding group from the cache (or an empty array if none exists)
+		const cachedMovies = cachedGroups[key] || [];
+		
+		// For each occurrence (index) in the new movies:
+		newMovies.forEach((newMovie, index) => {
+			let mergedMovie = newMovie;
+			// If there is a cached movie at this occurrence index, merge it in.
+			if (index < cachedMovies.length) {
+				// This merge preserves all cached properties.
+				// Cached data takes precedence, so manual corrections persist.
+				mergedMovie = { ...newMovie, ...cachedMovies[index] };
+			}
+			merged.push(mergedMovie);
+		});
 	});
   
-	// Group merged movies by a slugified version of their googleTitle to detect duplicates.
+	// Now, re-group the merged movies by slugified googleTitle to detect duplicates.
 	const groups = merged.reduce((acc, movie) => {
 		const key = slugify(movie.googleTitle);
 		if (!acc[key]) acc[key] = [];
@@ -68,23 +96,23 @@ function mergeWatchlists(newData, cachedData) {
 		return acc;
 	}, {});
   
-	// For each group with duplicates, adjust status.known as needed.
+	// For each group with duplicates, check the status.
+	// If a movie in the group is not fully corrected (i.e. not both status.known and status.tmdb),
+	// then set status.known to false and mark its unknownState.
 	Object.values(groups).forEach(group => {
 		if (group.length > 1) {
-			// For duplicates, if the movie's status is not both known and linked to TMDB,
-			// set status.known to false.
-			group.forEach(m => {
-				if (!(m.status && m.status.known && m.status.tmdb)) {
-					m.status.known = false;
-					m.unknownState = 'duplicate';
+			group.forEach(movie => {
+				if (!(movie.status && movie.status.known && movie.status.tmdb)) {
+					// Force the movie to be marked as not known.
+					movie.status = { ...movie.status, known: false };
+					movie.unknownState = 'duplicate';
 				}
 			});
 		}
 	});
   
-	// Return the merged (and possibly updated) list.
 	return merged;
-}
+}  
 
 module.exports = {
 	updateMovie,

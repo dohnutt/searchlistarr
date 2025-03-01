@@ -1,20 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1"/>
-	<title>Searchlistarr • Manage Google Watchlist</title>
-	<link rel="stylesheet" href="style.css">
-	<meta name="robots" content="noindex, nofollow">
-
-	<link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
-	<link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
-	<link rel="shortcut icon" href="/favicon/favicon.ico" />
-	<link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
-	<meta name="apple-mobile-web-app-title" content="Searchlistarr" />
-	<link rel="manifest" href="/favicon/site.webmanifest" />
-</head>
-<body>
+<%- include('partials/head.ejs') %>
 
 	<%- include('partials/header.ejs') %>
 
@@ -31,9 +15,9 @@
 
 		<%- include('partials/pagination.ejs', pagination) %>
 
-		<div class="movies movies-<%= grid ? 'p' : 'f' %>">
+		<div class="page movies movies-<%= grid ? 'p' : 'f' %>">
 			<% if (movies.length === 0) { %>
-				<p class="opacity-muted" style="width: 100%; text-align: center; min-height:300px; margin: 0; padding: 2rem 0;">No media found 😭</p>
+				<p class="opacity-muted tc" style="width: 100%; min-height:300px; margin: 0; padding: 2rem 0;">No media found 😭</p>
 			<% } else { %>
 				<% movies.forEach(function(movie, i) { %>
 					<%- include('partials/movie' + (grid ? '-poster' : '') + '.ejs',{movie, i}) %>
@@ -44,6 +28,4 @@
 		<%- include('partials/pagination.ejs', pagination) %>
 	</main>
 
-	<script type="text/javascript" src="app.js"></script>
-</body>
-</html>
+<%- include('partials/foot.ejs') %>
