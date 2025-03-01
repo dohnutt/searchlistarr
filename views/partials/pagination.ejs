@@ -1,9 +1,21 @@
 <div role="navigation" class="pagination">
-	<% if (pagination.current > 0 && pagination.total > pagination.current) { %>
-		<a href="<%= pagination.base %>?p=<%- pagination.prev %>" class="button button-t prev">Prev</a>
-	<% } %>
+	<a href="<%= nav.currentUrl %>?p=<%- pagination.prev %>" class="button button-t prev"
+		title="<%= pagination.prev + 1 %> of <%= pagination.total %>"
+		<%= (pagination.current > 0 && pagination.total > pagination.current) ? '' : 'disabled' %>
+	>Prev</a>
+	
+	<span class="opacity-muted" style="display: flex; align-items: baseline;">
+		<small class="opacity-muted"><%= pagination.current + 1 %> of <%= pagination.total %></small>
+		
+		<a href="<%= nav.currentUrl %>?p=<%- pagination.current %>&grid=<%- grid ? 0 : 1 %>" class="button button-l view" aria-label="Toggle view" title="Toggle view">
+			<span class="icon">
+				<% if (grid) {%><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M0 32l448 0 0 448L0 480 0 32zM96 288a32 32 0 1 0 0-64 32 32 0 1 0 0 64zm32-128a32 32 0 1 0 -64 0 32 32 0 1 0 64 0zM96 384a32 32 0 1 0 0-64 32 32 0 1 0 0 64zm96-248l-24 0 0 48 24 0 160 0 24 0 0-48-24 0-160 0zm0 96l-24 0 0 48 24 0 160 0 24 0 0-48-24 0-160 0zm0 96l-24 0 0 48 24 0 160 0 24 0 0-48-24 0-160 0z"/></svg><%} else { %><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M0 32l128 0 0 128L0 160 0 32zM0 192l128 0 0 128L0 320 0 192zM128 352l0 128L0 480 0 352l128 0zM160 32l128 0 0 128-128 0 0-128zM288 192l0 128-128 0 0-128 128 0zM160 352l128 0 0 128-128 0 0-128zM448 32l0 128-128 0 0-128 128 0zM320 192l128 0 0 128-128 0 0-128zM448 352l0 128-128 0 0-128 128 0z"/></svg><% } %>
+			</span>
+		</a>
+	</span>
 
-	<% if (pagination.current < (pagination.total - 1)) { %>
-		<a href="<%= pagination.base %>?p=<%- pagination.next %>" class="button button-t next">Next</a>
-	<% } %>
+	<a href="<%= nav.currentUrl %>?p=<%- pagination.next %>" class="button button-t next"
+		title="<%= pagination.next + 1 %> of <%= pagination.total %>"
+		<%- (pagination.current < (pagination.total - 1)) ? '' : 'disabled' %>
+	>Next</a>
 </div>

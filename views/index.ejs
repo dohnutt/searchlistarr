@@ -31,13 +31,15 @@
 
 		<%- include('partials/pagination.ejs', pagination) %>
 
-		<% if (movies.length === 0) { %>
-			<p style="text-align: center;">No media found 😎👍</p>
-		<% } else { %>
-			<% movies.forEach(function(movie, i) { %>
-				<%- include('partials/movie.ejs',{movie, i}) %>
-			<% }); %>
-		<% } %>
+		<div class="movies movies-<%= grid ? 'p' : 'f' %>">
+			<% if (movies.length === 0) { %>
+				<p class="opacity-muted" style="width: 100%; text-align: center; min-height:300px; margin: 0; padding: 2rem 0;">No media found 😭</p>
+			<% } else { %>
+				<% movies.forEach(function(movie, i) { %>
+					<%- include('partials/movie' + (grid ? '-poster' : '') + '.ejs',{movie, i}) %>
+				<% }); %>
+			<% } %>
+		</div>
 
 		<%- include('partials/pagination.ejs', pagination) %>
 	</main>

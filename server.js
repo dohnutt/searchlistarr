@@ -4,29 +4,28 @@
 
 require('dotenv').config();
 const express = require('express');
+const cookie = require('cookie-parser');
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
 const { scrapeGoogleWatchlist, collectMovieData, createUnknownlist, fetchMovieData } = require('./tmdb');
 const { sendOverseerrRequest } = require('./overseerr');
-const { slugify, normalize, jsonForFile } = require('./utils');
-const { render } = require('ejs');
+const { normalize, jsonForFile } = require('./utils');
 const { updateMovie, removeMovie, mergeWatchlists } = require('./operations');
+const cookieParser = require('cookie-parser');
+
+const watchlistFile = './cache/watchlist.json';
+const unknownlistFile = './cache/unknownlist.json';
+const perPage = 100;
 
 const app = express();
 const PORT = process.env.PORT || 5155;
 
-const watchlistFile = './cache/watchlist.json';
-const unknownlistFile = './cache/unknownlist.json';
-
-const perPage = 50;
-
-// Set up EJS as the view engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Parse form data
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -56,6 +55,9 @@ app.get('/', (req, res) => {
 	const watchlistCount = watchlistData.data.length || 0;
 	let pageMovies = watchlistData.data;
 
+	let viewGrid = parseInt(req.query.grid || req.cookies['grid']) ? 1 : 0;
+	res.cookie('grid', viewGrid);
+
 	let q = req.query.q || '';
 	if (q.length) {
 		const normalQ = normalize(q);
@@ -75,8 +77,8 @@ app.get('/', (req, res) => {
 		title: 'Your watchlist',
 		movies: pageMovies,
 		search: q,
+		grid: viewGrid,
 		pagination: {
-			base: '/',
 			current: currentPage,
 			total: totalPages,
 			prev: currentPage - 1,
@@ -87,6 +89,8 @@ app.get('/', (req, res) => {
 			unknowns: unknownsCount
 		},
 		nav: {
+			currentUrl: '/',
+			currentUrlWithView: '/?grid=' + viewGrid,
 			currentPage: 'watchlist',
 			overseerUrl: process.env.OVERSEERR_URL
 		}
@@ -118,6 +122,9 @@ app.get('/unknowns', (req, res) => {
 	const watchlistCount = watchlistData.data.length || 0;
 	let pageMovies = unknownsData.data;
 
+	let viewGrid = parseInt(req.query.grid || req.cookies['grid']) ? 1 : 0;
+	res.cookie('grid', viewGrid);
+	
 	let q = req.query.q || '';
 	if (q.length) {
 		const normalQ = normalize(q);
@@ -137,8 +144,8 @@ app.get('/unknowns', (req, res) => {
 		title: 'Unknown media',
 		movies: pageMovies,
 		search: q,
+		grid: viewGrid,
 		pagination: {
-			base: '/unknowns',
 			current: currentPage,
 			total: totalPages,
 			prev: currentPage - 1,
@@ -149,6 +156,8 @@ app.get('/unknowns', (req, res) => {
 			unknowns: unknownsCount
 		},
 		nav: {
+			currentUrl: '/unknowns',
+			currentUrlWithView: '/unknowns?grid=' + viewGrid,
 			currentPage: 'unknowns',
 			overseerUrl: process.env.OVERSEERR_URL
 		}
