@@ -159,11 +159,11 @@ async function collectMovieData(scrapedTitles, cachedMovies = []) {
 
             // If we found a cached movie and overrideCache is false, skip querying.
             if (cachedMovie && !overrideCache) {
-                console.log(`Skipping cached: ${movieTitle} (occurrence ${occurrenceIndex})`);
+                console.log(`Skipping cached: ${movieTitle}`);
                 // Wrap the cached movie in a resolved promise.
                 return Promise.resolve(cachedMovie);
             } else {
-                console.log(`Querying: ${movieTitle} (occurrence ${occurrenceIndex})`);
+                console.log(`Querying: ${movieTitle}`);
                 // Query TMDB for fresh metadata.
                 return fetchMovieData(movieTitle, { googleTitle: movieTitle });
             }
