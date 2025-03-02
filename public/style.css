@@ -289,7 +289,7 @@ label, legend {
 	padding: 2em;
 	margin: 0 auto 1em;
 	position: relative;
-	transition: opacity 0.2s ease;
+	transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .movie-p {
@@ -298,6 +298,10 @@ label, legend {
 	margin: 0;
 	border: 0;
 	width: calc(20% - 0.8rem);
+}
+
+.movie-p:hover, .movie-p:focus {
+	transform: scale(1.05);
 }
 
 .movie-p .unknown-state {
