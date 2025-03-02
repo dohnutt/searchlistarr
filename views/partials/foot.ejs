@@ -1,3 +1,10 @@
+	<dialog id="busy" class="modal tc">
+		<form method="dialog"><button type="submit" autofocus class="button-t close" aria-label="Close dialog"><span class="icon loader"><%- utils.svgIcon('x') %></span></button></form>
+		<h2>Searchlistarr is currently performing an operation.</h2>
+		<span class="icon loader"><%- utils.svgIcon('spinner') %></span>
+		<p>The dialog will close when complete. Do not navigate away from this page.</p>
+	</dialog>
+	
 	<script>
 	const checkSvg = '<%- utils.svgIcon("check") %>';
 	const xSvg = '<%- utils.svgIcon("x") %>';

@@ -7,7 +7,7 @@
 		<div class="movie-col">
 			<small class="unknown-state opacity-muted">
 				<%- movie.unknownState ? movie.unknownState + ' &nbsp; ' : '' %>
-				<a href="<%= movie.googleSearchUrl %>" target="_blank"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M328 0L304 0l0 48 24 0 102.1 0L207 271l-17 17L224 321.9l17-17 223-223L464 184l0 24 48 0 0-24 0-160 0-24L488 0 328 0zM24 32L0 32 0 56 0 488l0 24 24 0 432 0 24 0 0-24 0-176 0-24-48 0 0 24 0 152L48 464 48 80l152 0 24 0 0-48-24 0L24 32z"/></svg></span></a>
+				<a href="<%= movie.googleSearchUrl %>" target="_blank"><span class="icon"><%- utils.svgIcon('external') %></span></a>
 			</small>
 
 			<fieldset>
@@ -29,7 +29,7 @@
 			<fieldset>
 				<label for="id">TMDB ID</label><br />
 				<% if (movie.id) { %>
-					<a href="https://www.themoviedb.org/<%= movie.mediaType || 'movie' %>/<%= movie.id %>" target="_blank"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M328 0L304 0l0 48 24 0 102.1 0L207 271l-17 17L224 321.9l17-17 223-223L464 184l0 24 48 0 0-24 0-160 0-24L488 0 328 0zM24 32L0 32 0 56 0 488l0 24 24 0 432 0 24 0 0-24 0-176 0-24-48 0 0 24 0 152L48 464 48 80l152 0 24 0 0-48-24 0L24 32z"/></svg> &nbsp; </span><%= movie.id %></a>
+					<a href="https://www.themoviedb.org/<%= movie.mediaType || 'movie' %>/<%= movie.id %>" target="_blank"><span class="icon"><%- utils.svgIcon('external') %> &nbsp; </span><%= movie.id %></a>
 				<% } else { %>
 					Unknown
 				<% } %>
@@ -44,10 +44,10 @@
 	</div>
 
 	<button type="submit">
-		<span class="icon loader dn" aria-label="Loading"><svg class="spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path opacity=".4" d="M0 256C0 397.4 114.6 512 256 512c94.7 0 177.5-51.5 221.7-128l-55.4-32c-33.2 57.4-95.2 96-166.3 96C150 448 64 362 64 256S150 64 256 64l0-64C114.6 0 0 114.6 0 256z"/><path d="M477.7 384c21.8-37.7 34.3-81.4 34.3-128C512 114.6 397.4 0 256 0l0 64c106 0 192 86 192 192c0 35-9.4 67.8-25.7 96l55.4 32z"/></svg></span><span class="icon main-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M368 208A160 160 0 1 0 48 208a160 160 0 1 0 320 0zM337.1 371.1C301.7 399.2 256.8 416 208 416C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208c0 48.8-16.8 93.7-44.9 129.1l124 124 17 17L478.1 512l-17-17-124-124z"/></svg></span><span class="icon check-icon dn" aria-hidden="true"><svg class="check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M448 130L431 147 177.5 399.2l-16.9 16.9-16.9-16.9L17 273.1 0 256.2l33.9-34 17 16.9L160.6 348.3 397.1 112.9l17-16.9L448 130z"/></svg> </span> Query TMDB
+		<span class="icon loader dn" aria-label="Loading"><%- utils.svgIcon('spinner') %></span><span class="icon main-icon" aria-hidden="true"><%- utils.svgIcon('search') %></span><span class="icon check-icon dn" aria-hidden="true"><%- utils.svgIcon('check') %> </span> Query TMDB
 	</button>
 
 	<button type="button" class="js-request button-overseerr <%= movie.status.overseerr ? 'overseerr-requested' : '' %>" id="request-<%= i %>" <%= movie.id ? '' : 'disabled' %>>
-		<span class="icon loader dn" aria-label="Loading"><svg class="spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path opacity=".4" d="M0 256C0 397.4 114.6 512 256 512c94.7 0 177.5-51.5 221.7-128l-55.4-32c-33.2 57.4-95.2 96-166.3 96C150 448 64 362 64 256S150 64 256 64l0-64C114.6 0 0 114.6 0 256z"/><path d="M477.7 384c21.8-37.7 34.3-81.4 34.3-128C512 114.6 397.4 0 256 0l0 64c106 0 192 86 192 192c0 35-9.4 67.8-25.7 96l55.4 32z"/></svg></span><span class="icon main-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M241 345l-17 17-17-17L79 217l-17-17L96 166.1l17 17 87 87L200 24l0-24 48 0 0 24 0 246.1 87-87 17-17L385.9 200l-17 17L241 345zM48 344l0 120 352 0 0-120 0-24 48 0 0 24 0 144 0 24-24 0L24 512 0 512l0-24L0 344l0-24 48 0 0 24z"/></svg></span><span class="icon check-icon dn" aria-hidden="true"><svg class="check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M448 130L431 147 177.5 399.2l-16.9 16.9-16.9-16.9L17 273.1 0 256.2l33.9-34 17 16.9L160.6 348.3 397.1 112.9l17-16.9L448 130z"/></svg> </span> Request<%= movie.status.overseerr ? 'ed' : '' %>
+		<span class="icon loader dn" aria-label="Loading"><%- utils.svgIcon('spinner') %></span><span class="icon main-icon" aria-hidden="true"><%- utils.svgIcon('download') %></span><span class="icon check-icon dn" aria-hidden="true"><%- utils.svgIcon('check') %> </span> Request<%= movie.status.overseerr ? 'ed' : '' %>
 	</button>
 </form>

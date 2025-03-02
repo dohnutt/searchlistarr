@@ -86,7 +86,7 @@ nav > form {
 
 .skip-cache-checkbox {
 	width: 11.05rem;
-	margin: 0.325rem 0 0;
+	margin: 0.5rem 0 0;
 }
 
 hr {
@@ -357,6 +357,45 @@ label, legend {
 	bottom: 0;
 }
 
+footer {
+	margin: 5rem 0 1rem;
+	opacity: 0.5;
+	font-size: 0.8rem;
+	text-align: right;
+}
+
+dialog {
+	position: fixed;
+	z-index: 1000;
+	left: 1rem;
+	right: 1rem;
+	max-width: 900px;
+	top: 50%;
+	transform: translateY(-50%);
+	background: rgb(20 20 20 / 50%);
+	backdrop-filter: blur(1rem);
+	color: white;
+	border: 1px solid rgb(255 255 255 / 10%);
+	border-radius: 1.5rem;
+	padding: 10vh 15vw;
+	margin: 0 auto;
+}
+
+dialog::backdrop {
+	z-index: 999;
+	backdrop-filter: blur(0.25rem);
+}
+
+dialog .close {
+	position: absolute;
+	top: 0.5rem;
+	right: 0.5rem;
+}
+
+dialog > :first-child {
+	margin-top: 0;
+}
+
 .search {
 	margin-bottom: 2em;
 	position: relative;
@@ -517,6 +556,10 @@ body .db {
 		display: block;
 	}
 
+	.skip-cache-checkbox {
+		margin: 1rem auto 0;
+	}
+
 	.movie-f {
 		margin-left: -2rem;
 		margin-right: -2rem;
@@ -546,5 +589,9 @@ body .db {
 		object-position: right center;
 		opacity: 0.3;
 		mask-image: linear-gradient(to right, rgb(0 0 0 / 0%), rgb(0 0 0 / 100%));
+	}
+
+	dialog {
+		padding: 10vh 10vw;
 	}
 }

@@ -76,8 +76,10 @@ function fullRescrape(e) {
 	const form = e.target;
 	const button = e.submitter;
 	const data = new FormData(form);
+	const dialog = document.getElementById('busy');
 
 	startLoad(button);
+	dialog.showModal();
 	fetch(form.action,
 		{
 			method: form.method,
@@ -86,6 +88,7 @@ function fullRescrape(e) {
 		})
 		.then(response => response.json())
 		.then(result => {
+			dialog.close();
 			if (result.success) {
 				doSuccessButton(button);
 			} else {
