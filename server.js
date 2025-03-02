@@ -11,7 +11,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const { scrapeGoogleWatchlist, collectMovieData, createUnknownlist, fetchMovieData } = require('./tmdb');
 const { sendOverseerrRequest } = require('./overseerr');
-const { normalize, jsonForFile, getRelativeTimeString } = require('./utils');
+const { normalize, jsonForFile, getRelativeTimeString, svgIcon } = require('./utils');
 const { updateMovie, removeMovie, mergeWatchlists } = require('./operations');
 const cookieParser = require('cookie-parser');
 
@@ -105,6 +105,7 @@ app.get('/', (req, res) => {
 			overseerUrl: process.env.OVERSEERR_URL
 		},
 		settings: settingsData.data,
+		utils: { svgIcon },
 	});
 });
 
@@ -182,6 +183,7 @@ app.get('/unknowns', (req, res) => {
 			overseerUrl: process.env.OVERSEERR_URL
 		},
 		settings: settingsData.data,
+		utils: { svgIcon },
 	});
 });
 
@@ -238,6 +240,7 @@ app.get('/settings', (req, res) => {
 			overseerUrl: process.env.OVERSEERR_URL
 		},
 		settings: settingsData.data,
+		utils: { svgIcon },
 	});
 });
 
