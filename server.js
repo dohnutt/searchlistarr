@@ -244,6 +244,34 @@ app.get('/settings', (req, res) => {
 	});
 });
 
+// Simple API endpoint to share watchlist
+app.get('/api/v1/watchlist', (req, res) => {
+	const watchlistData = JSON.parse(fs.readFileSync(watchlistFile, 'utf8'));
+
+	const apiPerPage = 20;
+	const currentPage = parseInt(req.query.p) || 1,
+		pageOffset = (currentPage - 1) * apiPerPage;
+
+	const movies = {
+		page: currentPage,
+		totalPages: Math.ceil(watchlistData.data.length / apiPerPage),
+		totalResults: watchlistData.data.length,
+		results: []
+	};
+
+	movies.results = watchlistData.data.map(movie => {
+		return {
+			title: movie.title,
+			mediaType: movie.mediaType,
+			tmdbId: movie.id,
+		}
+	});
+
+	movies.results = movies.results.splice(pageOffset, apiPerPage);
+
+	return res.json(movies);
+});
+
 // Form submission endpoint to update unknown and re-query TMDB
 app.post('/settings', async (req, res) => {
 	fs.writeFileSync(settingsFile, jsonForFile(req.body));
