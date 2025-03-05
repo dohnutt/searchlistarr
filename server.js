@@ -4,17 +4,16 @@
 
 require('dotenv').config();
 const express = require('express');
-const cookie = require('cookie-parser');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const fs = require('fs');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
 
 const { scrapeGoogleWatchlist, collectMovieData, createUnknownlist, fetchMovieData } = require('./tmdb');
 const { sendOverseerrRequest } = require('./overseerr');
 const { normalize, jsonForFile, getRelativeTimeString, svgIcon } = require('./utils');
 const { updateMovie, removeMovie, mergeWatchlists } = require('./operations');
-const cookieParser = require('cookie-parser');
+
 
 const settingsFile = './cache/settings.json';
 const watchlistFile = './cache/watchlist.json';

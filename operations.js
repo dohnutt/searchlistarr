@@ -3,7 +3,6 @@
  */
 
 const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
 const { slugify, jsonForFile, deepMerge } = require('./utils');
 
 const skipCache = process.env.SKIP_CACHE || false;
