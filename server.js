@@ -5,6 +5,7 @@
 require('dotenv').config();
 const express = require('express');
 const cookie = require('cookie-parser');
+const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
@@ -26,6 +27,7 @@ const PORT = process.env.PORT || 5155;
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+app.use(cors());
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
