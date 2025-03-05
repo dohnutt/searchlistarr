@@ -26,7 +26,6 @@ const PORT = process.env.PORT || 5155;
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-app.use(cors());
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -246,7 +245,7 @@ app.get('/settings', (req, res) => {
 });
 
 // Simple API endpoint to share watchlist
-app.get('/api/v1/watchlist', (req, res) => {
+app.get('/api/v1/watchlist', cors(), (req, res) => {
 	const watchlistData = JSON.parse(fs.readFileSync(watchlistFile, 'utf8'));
 
 	const apiPerPage = 20;
