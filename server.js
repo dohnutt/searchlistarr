@@ -261,6 +261,7 @@ app.get('/api/v1/watchlist', cors(), (req, res) => {
 
 	movies.results = watchlistData.data.map(movie => {
 		return {
+			uuid: movie.uuid,
 			title: movie.title,
 			mediaType: movie.mediaType,
 			tmdbId: movie.id,
