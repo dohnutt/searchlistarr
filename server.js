@@ -19,6 +19,7 @@ const settingsFile = './cache/settings.json';
 const watchlistFile = './cache/watchlist.json';
 const unknownlistFile = './cache/unknownlist.json';
 const perPage = 100;
+const enableOverseerrRequests = process.env.ENABLE_OVERSEERR_REQUESTS ? process.env.ENABLE_OVERSEERR_REQUESTS === 'true' : true;
 
 const app = express();
 const PORT = process.env.PORT || 5155;
@@ -104,7 +105,10 @@ app.get('/', (req, res) => {
 			currentPage: 'watchlist',
 			overseerUrl: process.env.OVERSEERR_URL
 		},
-		settings: settingsData.data,
+		settings: {
+			enableOverseerrRequests,
+			...settingsData.data
+		},
 		utils: { svgIcon },
 	});
 });
@@ -182,7 +186,10 @@ app.get('/unknowns', (req, res) => {
 			currentPage: 'unknowns',
 			overseerUrl: process.env.OVERSEERR_URL
 		},
-		settings: settingsData.data,
+		settings: {
+			enableOverseerrRequests,
+			...settingsData.data
+		},
 		utils: { svgIcon },
 	});
 });

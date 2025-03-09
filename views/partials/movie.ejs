@@ -47,7 +47,9 @@
 		<span class="icon loader dn" aria-label="Loading"><%- utils.svgIcon('spinner') %></span><span class="icon main-icon" aria-hidden="true"><%- utils.svgIcon('search') %></span><span class="icon check-icon dn" aria-hidden="true"><%- utils.svgIcon('check') %> </span> Query TMDB
 	</button>
 
-	<button type="button" class="js-request button-overseerr <%= movie.status.overseerr ? 'overseerr-requested' : '' %>" id="request-<%= i %>" <%= movie.id ? '' : 'disabled' %>>
-		<span class="icon loader dn" aria-label="Loading"><%- utils.svgIcon('spinner') %></span><span class="icon main-icon" aria-hidden="true"><%- utils.svgIcon('download') %></span><span class="icon check-icon dn" aria-hidden="true"><%- utils.svgIcon('check') %> </span> Request<%= movie.status.overseerr ? 'ed' : '' %>
-	</button>
+	<% if (settings.enableOverseerrRequests) { %>
+		<button type="button" class="js-request button-overseerr <%= movie.status.overseerr ? 'overseerr-requested' : '' %>" id="request-<%= i %>" <%= movie.id ? '' : 'disabled' %>>
+			<span class="icon loader dn" aria-label="Loading"><%- utils.svgIcon('spinner') %></span><span class="icon main-icon" aria-hidden="true"><%- utils.svgIcon('download') %></span><span class="icon check-icon dn" aria-hidden="true"><%- utils.svgIcon('check') %> </span> Request<%= movie.status.overseerr ? 'ed' : '' %>
+		</button>
+	<% } %>
 </form>

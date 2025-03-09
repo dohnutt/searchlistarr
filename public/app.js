@@ -3,7 +3,9 @@ document.getElementById('full-run').addEventListener('submit', fullRescrape);
 
 document.querySelectorAll('form.movie').forEach(form => {
 	form.addEventListener('submit', queryTmdb);
-	form.querySelector('.js-request').addEventListener('click', requestToOverseerr);
+	if (form.querySelector('.js-request')) {
+		form.querySelector('.js-request').addEventListener('click', requestToOverseerr);
+	}
 });
 
 if (document.getElementById('settings')) {
