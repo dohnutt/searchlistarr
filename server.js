@@ -249,7 +249,7 @@ app.get('/api/v1/watchlist', cors(), (req, res) => {
 	const watchlistData = JSON.parse(fs.readFileSync(watchlistFile, 'utf8'));
 
 	const apiPerPage = 20;
-	const currentPage = parseInt(req.query.p) || 1,
+	const currentPage = parseInt(req.query.page) || 1,
 		pageOffset = (currentPage - 1) * apiPerPage;
 
 	const movies = {
