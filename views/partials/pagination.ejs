@@ -1,5 +1,5 @@
 <div role="navigation" class="pagination">
-	<a href="<%= nav.currentUrl %>?p=<%- pagination.prev %>" class="button button-t prev"
+	<a href="<%= nav.currentUrl %>?p=<%- pagination.prev %>&q=<%= search %>" class="button button-t prev"
 		title="<%= pagination.prev + 1 %> of <%= pagination.total %>"
 		<%= (pagination.current > 0 && pagination.total > pagination.current) ? '' : 'disabled' %>
 	>Prev</a>
@@ -7,14 +7,14 @@
 	<span class="opacity-muted" style="display: flex; align-items: baseline;">
 		<small class="opacity-muted"><%= pagination.current + 1 %> of <%= pagination.total %></small>
 		
-		<a href="<%= nav.currentUrl %>?p=<%- pagination.current %>&grid=<%- grid ? 0 : 1 %>" class="button button-l view" aria-label="Toggle view" title="Toggle view">
+		<a href="<%= nav.currentUrl %>?p=<%- pagination.current %>&grid=<%- grid ? 0 : 1 %>&q=<%= search %>" class="button button-l view" aria-label="Toggle view" title="Toggle view">
 			<span class="icon">
 				<% if (grid) {%><%- utils.svgIcon('form') %><%} else { %><%- utils.svgIcon('grid') %><% } %>
 			</span>
 		</a>
 	</span>
 
-	<a href="<%= nav.currentUrl %>?p=<%- pagination.next %>" class="button button-t next"
+	<a href="<%= nav.currentUrl %>?p=<%- pagination.next %>&q=<%= search %>" class="button button-t next"
 		title="<%= pagination.next + 1 %> of <%= pagination.total %>"
 		<%- (pagination.current < (pagination.total - 1)) ? '' : 'disabled' %>
 	>Next</a>
