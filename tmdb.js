@@ -185,13 +185,14 @@ async function collectMovieData(scrapedTitles, cachedMovies = [], skipCache = fa
 // Create the unknowns list – includes items with mediaType="person", id=0, or missing releaseYear,
 // or items that appear as duplicates, unless they have been corrected
 // i.e. status.known && status.tmdb === true
-async function createUnknownlist(movies) {
+function createUnknownlist(movies) {
 	let unknownlist = []
 	
 	movies.forEach(m => {
 		const isUnknown =
 			m.status.known === false ||
 			m.status.tmdb === false ||
+			m.status.hasDuplicate === true ||
 			(m.unknownState && m.unknownState.length);
 
 		if (isUnknown) {
