@@ -61,6 +61,7 @@ async function fetchMovieData(movieTitle, movieData = {}) {
 		status: {
 			known: false,
 			tmdb: false,
+			hasDuplicate: false,
 			overseerr: false,
 		},
 		unknownState: 'unmatched'
@@ -204,10 +205,40 @@ function createUnknownlist(movies) {
 }
 
 
+function gatherDuplicatesById(movies) {
+	let groups = {};
+	
+	// Group movies by their TMDB id.
+	movies.forEach(movie => {
+		if (movie.id) {
+			if (!groups[movie.id]) {
+				groups[movie.id] = [];
+			}
+			groups[movie.id].push(movie);
+		}
+	});
+	
+	// For each group with more than one movie, mark each movie.
+	for (const id in groups) {
+		if (groups[id].length > 1) {
+			groups[id].forEach(movie => {
+				// Ensure that the movie has a status object.
+				if (!movie.status) {
+					movie.status = {};
+				}
+				movie.status.hasDuplicate = true;
+			});
+		}
+	}
+	
+	return movies;
+}
+
 
 module.exports = {
 	scrapeGoogleWatchlist,
 	fetchMovieData,
 	collectMovieData,
-	createUnknownlist
+	createUnknownlist,
+	gatherDuplicatesById
 };

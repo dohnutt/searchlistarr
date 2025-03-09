@@ -9,7 +9,12 @@ const cookieParser = require('cookie-parser');
 const fs = require('fs');
 const path = require('path');
 
-const { scrapeGoogleWatchlist, collectMovieData, createUnknownlist, fetchMovieData } = require('./tmdb');
+const {
+	scrapeGoogleWatchlist,
+	fetchMovieData,
+	collectMovieData,
+	createUnknownlist,
+	gatherDuplicatesById } = require('./tmdb');
 const { sendOverseerrRequest } = require('./overseerr');
 const { normalize, jsonForFile, getRelativeTimeString, svgIcon } = require('./utils');
 const { updateMovie, removeMovie, mergeWatchlists } = require('./operations');
@@ -345,10 +350,13 @@ app.post('/run', async (req, res) => {
 	const moviesWithData = await collectMovieData(scrapedTitles, cached.data, skipCache);
 
 	// 3. Combine queried data with existing cache.
-	const combinedMovies = mergeWatchlists(moviesWithData, cached.data, skipCache);
+	let combinedMovies = mergeWatchlists(moviesWithData, cached.data, skipCache);
 
-	// 4. Find unknowns (duplicates, id=0, mediaType=person, releaseYear=null)
-	const unknownMovies = await createUnknownlist(combinedMovies);
+	// 4. Find duplicates
+	combinedMovies = gatherDuplicatesById(combinedMovies);
+
+	// 5. Find unknowns (duplicates, id=0, mediaType=person, releaseYear=null)
+	const unknownMovies = createUnknownlist(combinedMovies);
 
 	// Write updated cache files
 	fs.writeFileSync(watchlistFile, jsonForFile(combinedMovies));
