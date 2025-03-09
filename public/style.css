@@ -480,6 +480,10 @@ body .dn, body [hidden] {
 	display: none;
 }
 
+body .dib {
+	display: inline-block;
+}
+
 body .db {
 	display: block;
 }
